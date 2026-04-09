@@ -3,354 +3,783 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>삼성전자 | 스마트폰, TV, 가전</title>
-    
-    <!-- Noto Sans KR 폰트 적용 -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS (CDN) -->
+    <title>프리미엄 임직원 역량 대시보드</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (Excel) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Phosphor Icons (Duotone) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['"Noto Sans KR"', 'sans-serif'],
+                        sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'sans-serif'],
                     },
                     colors: {
-                        samsung: {
-                            blue: '#1428A0', // 삼성 블루 컬러
-                            light: '#f4f4f4',
-                            dark: '#000000',
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            900: '#312e81',
+                        }
+                    },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                        'fade-in-up': 'fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pulse-glow': 'pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { opacity: '1', boxShadow: '0 0 0 0 rgba(99, 102, 241, 0.4)' },
+                            '50%': { opacity: '.8', boxShadow: '0 0 0 20px rgba(99, 102, 241, 0)' },
                         }
                     }
                 }
             }
         }
     </script>
-
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
     <style>
-        /* 부드러운 스크롤 효과 및 기본 설정 */
-        html { scroll-behavior: smooth; }
-        body { -webkit-font-smoothing: antialiased; }
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         
-        /* 배너 애니메이션 */
-        .fade-in {
-            animation: fadeIn 1s ease-in-out;
+        body {
+            background-color: #f8fafc;
+            overflow-x: hidden;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+
+        /* Glassmorphism Styles */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
         }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Drag over effect */
+        .drag-over-active {
+            border-color: #6366f1 !important;
+            background: rgba(99, 102, 241, 0.05) !important;
+            transform: scale(1.02);
+        }
+
+        /* Table specific styles */
+        th.sortable { cursor: pointer; transition: all 0.2s; }
+        th.sortable:hover { background-color: rgba(0,0,0,0.02); }
+        .row-enter { animation: fadeInUp 0.4s ease forwards; opacity: 0; }
         
-        /* 숨김 스크롤바 (가로 스크롤 영역용) */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Staggered delays */
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
     </style>
 </head>
-<body class="bg-white text-gray-900 font-sans pt-16">
+<body class="text-gray-800 antialiased min-h-screen relative">
 
-    <!-- Header / Navigation -->
-    <header class="fixed top-0 w-full bg-white/90 backdrop-blur-md z-50 border-b border-gray-200 transition-all duration-300" id="header">
-        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                
-                <!-- Logo & Left Menu -->
-                <div class="flex items-center gap-8">
-                    <!-- Samsung Logo (Text substitute for demo) -->
-                    <a href="#" class="font-black text-2xl tracking-tighter text-black">
-                        SAMSUNG
-                    </a>
-                    
-                    <!-- Desktop Menu -->
-                    <nav class="hidden lg:flex space-x-6 font-medium text-sm">
-                        <a href="#" class="hover:text-blue-600 transition-colors py-2">모바일</a>
-                        <a href="#" class="hover:text-blue-600 transition-colors py-2">TV/오디오</a>
-                        <a href="#" class="hover:text-blue-600 transition-colors py-2">가전</a>
-                        <a href="#" class="hover:text-blue-600 transition-colors py-2">컴퓨팅</a>
-                        <a href="#" class="hover:text-blue-600 transition-colors py-2">디스플레이</a>
-                        <a href="#" class="hover:text-blue-600 transition-colors py-2">SmartThings</a>
-                    </nav>
-                </div>
+    <!-- Ambient Background Blobs -->
+    <div class="fixed top-[-10%] left-[-10%] w-96 h-96 rounded-full bg-purple-300 mix-blend-multiply filter blur-[100px] opacity-40 animate-blob z-0 pointer-events-none"></div>
+    <div class="fixed top-[20%] right-[-10%] w-96 h-96 rounded-full bg-brand-300 mix-blend-multiply filter blur-[100px] opacity-40 animate-blob animation-delay-2000 z-0 pointer-events-none" style="animation-delay: 2s;"></div>
+    <div class="fixed bottom-[-20%] left-[20%] w-96 h-96 rounded-full bg-pink-300 mix-blend-multiply filter blur-[100px] opacity-40 animate-blob animation-delay-4000 z-0 pointer-events-none" style="animation-delay: 4s;"></div>
 
-                <!-- Right Menu & Icons -->
-                <div class="flex items-center gap-4">
-                    <nav class="hidden lg:flex space-x-6 font-medium text-sm mr-4">
-                        <a href="#" class="hover:text-blue-600 transition-colors py-2">스토리</a>
-                        <a href="#" class="hover:text-blue-600 transition-colors py-2">고객지원</a>
-                    </nav>
-                    
-                    <button class="p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label="검색">
-                        <i data-lucide="search" class="w-5 h-5"></i>
-                    </button>
-                    <button class="p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label="장바구니">
-                        <i data-lucide="shopping-cart" class="w-5 h-5"></i>
-                    </button>
-                    <button class="hidden sm:block p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label="내 계정">
-                        <i data-lucide="user" class="w-5 h-5"></i>
-                    </button>
-                    
-                    <!-- Mobile Menu Toggle -->
-                    <button id="mobile-menu-btn" class="lg:hidden p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label="메뉴">
-                        <i data-lucide="menu" class="w-6 h-6"></i>
-                    </button>
-                </div>
+    <!-- ==========================================
+         SCREEN 1: Upload (Center Hero)
+    =========================================== -->
+    <div id="screen-upload" class="relative z-10 min-h-screen flex flex-col items-center justify-center p-4 transition-opacity duration-700">
+        <div class="text-center mb-10 animate-fade-in-up">
+            <div class="inline-flex items-center justify-center p-3 bg-brand-100 rounded-2xl mb-4 shadow-sm">
+                <i class="ph-duotone ph-sparkle text-3xl text-brand-600"></i>
             </div>
+            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">
+                조직 역량을 <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-purple-600">한눈에</span>
+            </h1>
+            <p class="text-lg text-gray-500 max-w-xl mx-auto">엑셀 데이터를 업로드하고, AI 기반의 유려한 시각화 대시보드로<br/>부서별/직급별 인사이트를 즉시 도출하세요.</p>
         </div>
 
-        <!-- Mobile Menu Dropdown -->
-        <div id="mobile-menu" class="hidden lg:hidden bg-white border-t border-gray-200 overflow-y-auto max-h-[calc(100vh-4rem)]">
-            <div class="px-4 py-6 space-y-4 font-medium">
-                <a href="#" class="block text-lg hover:text-blue-600">모바일</a>
-                <a href="#" class="block text-lg hover:text-blue-600">TV/오디오</a>
-                <a href="#" class="block text-lg hover:text-blue-600">가전</a>
-                <a href="#" class="block text-lg hover:text-blue-600">컴퓨팅</a>
-                <a href="#" class="block text-lg hover:text-blue-600">디스플레이</a>
-                <a href="#" class="block text-lg hover:text-blue-600">SmartThings</a>
-                <hr class="my-4">
-                <a href="#" class="block text-lg hover:text-blue-600">스토리</a>
-                <a href="#" class="block text-lg hover:text-blue-600">고객지원</a>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main>
-        <!-- Hero Section (Main Banner) -->
-        <section class="relative bg-samsung-light overflow-hidden">
-            <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-col-reverse lg:flex-row items-center justify-between py-16 lg:py-24">
-                    
-                    <!-- Text Content -->
-                    <div class="w-full lg:w-1/2 mt-10 lg:mt-0 text-center lg:text-left fade-in">
-                        <span class="inline-block py-1 px-3 rounded-full bg-blue-100 text-blue-700 text-sm font-bold mb-4">신제품 출시</span>
-                        <h1 class="text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight mb-6">
-                            Galaxy S26 Ultra
-                        </h1>
-                        <p clas="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto lg:mx-0">
-                            모바일 AI의 새로운 시대. 압도적인 성능과 혁신적인 카메라로 일상을 특별하게 만드세요.
-                        </p>
-                        <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                            <a href="#" class="px-8 py-3 bg-black text-white rounded-full font-bold hover:bg-gray-800 transition-colors">
-                                구매하기
-                            </a>
-                            <a href="#" class="px-8 py-3 bg-white text-black border border-gray-300 rounded-full font-bold hover:bg-gray-50 transition-colors">
-                                자세히 보기
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <!-- Hero Image -->
-                    <div class="w-full lg:w-1/2 flex justify-center fade-in" style="animation-delay: 0.2s;">
-                        <!-- Placeholder image for Smartphone -->
-                        <img src="https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=800&q=80" 
-                             alt="Galaxy Smartphone" 
-                             class="max-w-full h-auto object-cover rounded-3xl shadow-2xl"
-                             onerror="this.src='https://via.placeholder.com/800x600?text=Galaxy+S26+Ultra'">
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Highlights / Categories -->
-        <section class="py-20 bg-white">
-            <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-                <h2 class="text-3xl md:text-4xl font-bold text-center mb-12">당신을 위한 추천 제품</h2>
+        <div class="w-full max-w-2xl animate-fade-in-up delay-100">
+            <div id="main-drop-zone" class="glass-panel rounded-3xl p-10 border-2 border-dashed border-brand-300 hover:border-brand-500 transition-all duration-300 text-center cursor-pointer relative overflow-hidden group shadow-xl">
+                <input type="file" id="main-file-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" accept=".xlsx, .xls, .csv">
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    
-                    <!-- Card 1 -->
-                    <a href="#" class="group block bg-gray-50 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                        <div class="aspect-square mb-6 overflow-hidden rounded-2xl bg-white flex items-center justify-center p-4">
-                            <img src="https://images.unsplash.com/photo-1593640408182-31c70c8268f5?auto=format&fit=crop&w=400&q=80" alt="Galaxy Book" class="object-contain w-full h-full group-hover:scale-105 transition-transform duration-500">
-                        </div>
-                        <h3 class="text-xl font-bold mb-2">Galaxy Book4 Pro</h3>
-                        <p class="text-gray-500 text-sm mb-4">가볍게, 하지만 강력하게.</p>
-                        <span class="text-blue-600 font-bold text-sm">자세히 보기 &rarr;</span>
-                    </a>
-
-                    <!-- Card 2 -->
-                    <a href="#" class="group block bg-gray-50 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                        <div class="aspect-square mb-6 overflow-hidden rounded-2xl bg-white flex items-center justify-center p-4">
-                            <img src="https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=400&q=80" alt="Neo QLED 8K" class="object-contain w-full h-full group-hover:scale-105 transition-transform duration-500">
-                        </div>
-                        <h3 class="text-xl font-bold mb-2">Neo QLED 8K</h3>
-                        <p class="text-gray-500 text-sm mb-4">경계를 넘어선 차원이 다른 화질.</p>
-                        <span class="text-blue-600 font-bold text-sm">자세히 보기 &rarr;</span>
-                    </a>
-
-                    <!-- Card 3 -->
-                    <a href="#" class="group block bg-gray-50 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                        <div class="aspect-square mb-6 overflow-hidden rounded-2xl bg-white flex items-center justify-center p-4">
-                            <img src="https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?auto=format&fit=crop&w=400&q=80" alt="Bespoke Refrigerator" class="object-contain w-full h-full group-hover:scale-105 transition-transform duration-500">
-                        </div>
-                        <h3 class="text-xl font-bold mb-2">BESPOKE 냉장고</h3>
-                        <p class="text-gray-500 text-sm mb-4">나만의 컬러, 나만의 라이프스타일.</p>
-                        <span class="text-blue-600 font-bold text-sm">자세히 보기 &rarr;</span>
-                    </a>
-
-                    <!-- Card 4 -->
-                    <a href="#" class="group block bg-gray-50 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                        <div class="aspect-square mb-6 overflow-hidden rounded-2xl bg-white flex items-center justify-center p-4">
-                            <img src="https://images.unsplash.com/photo-1579586337278-3befd40fd17a?auto=format&fit=crop&w=400&q=80" alt="Galaxy Watch" class="object-contain w-full h-full group-hover:scale-105 transition-transform duration-500">
-                        </div>
-                        <h3 class="text-xl font-bold mb-2">Galaxy Watch6</h3>
-                        <p class="text-gray-500 text-sm mb-4">완벽한 일상을 위한 건강 파트너.</p>
-                        <span class="text-blue-600 font-bold text-sm">자세히 보기 &rarr;</span>
-                    </a>
-
-                </div>
-            </div>
-        </section>
-
-        <!-- Second Banner (Event / Promo) -->
-        <section class="py-12 bg-black text-white relative">
-            <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-col md:flex-row items-center justify-between gap-8 py-10">
-                    <div class="md:w-1/2 space-y-6 text-center md:text-left">
-                        <h2 class="text-3xl sm:text-4xl font-bold">삼성닷컴 단독 혜택</h2>
-                        <p class="text-gray-300 text-lg">
-                            지금 가입하고 첫 구매 할인 쿠폰과 무료 배송 혜택을 누리세요.<br>
-                            매월 진행되는 특별한 이벤트를 놓치지 마세요.
-                        </p>
-                        <button class="px-8 py-3 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-colors mt-4">
-                            혜택 확인하기
-                        </button>
+                <div class="relative z-10 flex flex-col items-center justify-center gap-4 transition-transform group-hover:scale-105 duration-500">
+                    <div class="w-20 h-20 bg-white rounded-full shadow-md flex items-center justify-center animate-pulse-glow">
+                        <i class="ph-duotone ph-microsoft-excel-logo text-4xl text-green-600"></i>
                     </div>
-                    <div class="md:w-1/2 grid grid-cols-2 gap-4">
-                        <div class="bg-gray-800 p-6 rounded-2xl text-center">
-                            <i data-lucide="truck" class="w-10 h-10 mx-auto mb-3 text-samsung-blue text-white"></i>
-                            <h4 class="font-bold text-lg">전 제품 무료 배송</h4>
-                        </div>
-                        <div class="bg-gray-800 p-6 rounded-2xl text-center">
-                            <i data-lucide="shield-check" class="w-10 h-10 mx-auto mb-3 text-white"></i>
-                            <h4 class="font-bold text-lg">정품 100% 보장</h4>
-                        </div>
-                        <div class="bg-gray-800 p-6 rounded-2xl text-center">
-                            <i data-lucide="credit-card" class="w-10 h-10 mx-auto mb-3 text-white"></i>
-                            <h4 class="font-bold text-lg">무이자 할부 혜택</h4>
-                        </div>
-                        <div class="bg-gray-800 p-6 rounded-2xl text-center">
-                            <i data-lucide="headphones" class="w-10 h-10 mx-auto mb-3 text-white"></i>
-                            <h4 class="font-bold text-lg">24시간 챗봇 상담</h4>
-                        </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">여기로 파일을 드래그 하세요</h3>
+                        <p class="text-sm text-gray-500 mt-2">또는 클릭하여 내 PC에서 파일 선택</p>
                     </div>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-gray-50 border-t border-gray-200 pt-16 pb-8 text-sm">
-        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Footer Links Grid -->
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
-                <div>
-                    <h4 class="font-bold text-base mb-4 text-black">제품</h4>
-                    <ul class="space-y-3 text-gray-600">
-                        <li><a href="#" class="hover:text-black hover:underline">스마트폰</a></li>
-                        <li><a href="#" class="hover:text-black hover:underline">태블릿</a></li>
-                        <li><a href="#" class="hover:text-black hover:underline">오디오</a></li>
-                        <li><a href="#" class="hover:text-black hover:underline">워치</a></li>
-                        <li><a href="#" class="hover:text-black hover:underline">스마트 스위치</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold text-base mb-4 text-black">스토어</h4>
-                    <ul class="space-y-3 text-gray-600">
-                        <li><a href="#" class="hover:text-black hover:underline">삼성 강남</a></li>
-                        <li><a href="#" class="hover:text-black hover:underline">삼성 스토어 매장 찾기</a></li>
-                        <li><a href="#" class="hover:text-black hover:underline">삼성닷컴 혜택</a></li>
-                        <li><a href="#" class="hover:text-black hover:underline">캠퍼스 스토어</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold text-base mb-4 text-black">고객지원</h4>
-                    <ul class="space-y-3 text-gray-600">
-                        <li><a href="#" class="hover:text-black hover:underline">고객지원 홈</a></li>
-                        <li><a href="#" class="hover:text-black hover:underline">제품 등록</a></li>
-                        <li><a href="#" class="hover:text-black hover:underline">서비스 센터 찾기</a></li>
-                        <li><a href="#" class="hover:text-black hover:underline">온라인 상담</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold text-base mb-4 text-black">회사 정보</h4>
-                    <ul class="space-y-3 text-gray-600">
-                        <li><a href="#" class="hover:text-black hover:underline">회사소개</a></li>
-                        <li><a href="#" class="hover:text-black hover:underline">투자자 정보</a></li>
-                        <li><a href="#" class="hover:text-black hover:underline">지속가능경영</a></li>
-                        <li><a href="#" class="hover:text-black hover:underline">인재채용</a></li>
-                    </ul>
-                </div>
-            </div>
-
-            <hr class="border-gray-200 mb-8">
-
-            <!-- Bottom Footer -->
-            <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
-                <div class="text-gray-500 text-xs sm:text-sm text-center lg:text-left space-y-2">
-                    <p>삼성전자 주식회사 | 대표이사 : 한종희 | 사업자등록번호 : 119-81-06619</p>
-                    <p>통신판매업신고 : 제 2020-경기수원-2511 호 | 사업장주소 : 경기도 수원시 영통구 삼성로 129</p>
-                    <p>본 사이트의 콘텐츠는 저작권법의 보호를 받는 바 무단 전재, 복사, 배포 등을 금합니다.</p>
-                    <p class="mt-4 font-bold text-gray-800">Copyright © 1995-2026 SAMSUNG All Rights reserved.</p>
-                </div>
-
-                <div class="flex items-center gap-4 text-gray-600">
-                    <a href="#" class="hover:text-black" aria-label="Facebook"><i data-lucide="facebook" class="w-5 h-5"></i></a>
-                    <a href="#" class="hover:text-black" aria-label="Twitter"><i data-lucide="twitter" class="w-5 h-5"></i></a>
-                    <a href="#" class="hover:text-black" aria-label="Instagram"><i data-lucide="instagram" class="w-5 h-5"></i></a>
-                    <a href="#" class="hover:text-black" aria-label="YouTube"><i data-lucide="youtube" class="w-5 h-5"></i></a>
+                    <div class="flex gap-2 mt-2">
+                        <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">번호</span>
+                        <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">부서</span>
+                        <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">직급</span>
+                        <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">OPIC등급</span>
+                        <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">자격증</span>
+                    </div>
                 </div>
             </div>
             
-            <div class="mt-8 flex flex-wrap justify-center lg:justify-start gap-4 text-xs font-bold text-gray-800">
-                <a href="#" class="hover:underline">이용약관</a>
-                <a href="#" class="hover:underline text-black">개인정보처리방침</a>
-                <a href="#" class="hover:underline">이메일무단수집거부</a>
-                <a href="#" class="hover:underline">아이디어 정책</a>
+            <div class="mt-8 text-center">
+                <button id="btn-demo" class="text-sm text-brand-600 font-semibold hover:text-brand-800 transition-colors flex items-center justify-center gap-2 mx-auto px-4 py-2 rounded-full hover:bg-brand-50">
+                    <i class="ph-duotone ph-magic-wand"></i> 준비된 데이터가 없나요? 더미 데이터로 시작하기
+                </button>
             </div>
         </div>
-    </footer>
+    </div>
 
-    <!-- Scripts -->
+
+    <!-- ==========================================
+         SCREEN 2: Dashboard
+    =========================================== -->
+    <div id="screen-dashboard" class="hidden relative z-10 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10 opacity-0 transition-opacity duration-700">
+        
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 animate-fade-in-up">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <div class="p-2 bg-gradient-to-br from-brand-500 to-purple-600 rounded-lg shadow-lg">
+                        <i class="ph-bold ph-chart-polar text-white text-xl"></i>
+                    </div>
+                    <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">임직원 역량 현황</h1>
+                </div>
+                <p class="text-gray-500 text-sm ml-12">OPIC 성적 및 직무 자격증 통합 분석</p>
+            </div>
+
+            <!-- 미니 업로더 -->
+            <div class="relative group">
+                <button class="glass-panel px-5 py-2.5 rounded-full text-sm font-semibold text-gray-700 hover:text-brand-600 hover:border-brand-300 transition-all flex items-center gap-2 shadow-sm">
+                    <i class="ph-duotone ph-arrows-clockwise text-lg"></i> 데이터 재업로드
+                </button>
+                <input type="file" id="mini-file-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".xlsx, .xls, .csv">
+            </div>
+        </header>
+
+        <!-- 필터 영역 -->
+        <div class="glass-panel rounded-2xl p-4 mb-8 flex flex-wrap gap-4 items-center justify-between animate-fade-in-up delay-100">
+            <div class="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                <div class="flex items-center gap-2 pl-2">
+                    <i class="ph-duotone ph-faders text-brand-500 text-xl"></i>
+                    <span class="font-bold text-gray-700 text-sm">필터링</span>
+                </div>
+                <div class="h-6 w-px bg-gray-300 hidden md:block"></div>
+                <select id="filter-dept" class="bg-white/50 border border-white/50 text-gray-700 text-sm rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 block w-40 p-2.5 outline-none transition shadow-sm backdrop-blur-md">
+                    <option value="All">모든 부서</option>
+                </select>
+                <select id="filter-rank" class="bg-white/50 border border-white/50 text-gray-700 text-sm rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 block w-40 p-2.5 outline-none transition shadow-sm backdrop-blur-md">
+                    <option value="All">모든 직급</option>
+                </select>
+            </div>
+            <button id="reset-filters" class="text-sm font-medium text-gray-500 hover:text-brand-600 transition px-3 py-1.5 rounded-lg hover:bg-gray-100/50">초기화</button>
+        </div>
+
+        <!-- KPI 요약 카드 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 animate-fade-in-up delay-200">
+            <!-- KPI 1 -->
+            <div class="glass-panel rounded-3xl p-6 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-blue-500/10 blur-2xl group-hover:bg-blue-500/20 transition-all duration-500"></div>
+                <div class="flex items-center justify-between relative z-10">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-500 mb-1">분석 대상 총 인원</p>
+                        <p class="text-4xl font-extrabold text-gray-900 tracking-tight" id="kpi-total">0</p>
+                    </div>
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center shadow-inner border border-blue-200/50">
+                        <i class="ph-duotone ph-users-three text-blue-600 text-3xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 2 -->
+            <div class="glass-panel rounded-3xl p-6 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-emerald-500/10 blur-2xl group-hover:bg-emerald-500/20 transition-all duration-500"></div>
+                <div class="flex items-center justify-between relative z-10">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-500 mb-1">자격증 1개 이상 보유율</p>
+                        <div class="flex items-baseline gap-1">
+                            <p class="text-4xl font-extrabold text-gray-900 tracking-tight" id="kpi-cert">0</p>
+                            <span class="text-xl font-bold text-gray-500">%</span>
+                        </div>
+                    </div>
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center shadow-inner border border-emerald-200/50">
+                        <i class="ph-duotone ph-certificate text-emerald-600 text-3xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 3 -->
+            <div class="glass-panel rounded-3xl p-6 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-purple-500/10 blur-2xl group-hover:bg-purple-500/20 transition-all duration-500"></div>
+                <div class="flex items-center justify-between relative z-10">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-500 mb-1">어학 우수자 (AL/IH) 비율</p>
+                        <div class="flex items-baseline gap-1">
+                            <p class="text-4xl font-extrabold text-gray-900 tracking-tight" id="kpi-opic">0</p>
+                            <span class="text-xl font-bold text-gray-500">%</span>
+                        </div>
+                    </div>
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center shadow-inner border border-purple-200/50">
+                        <i class="ph-duotone ph-globe-hemisphere-east text-purple-600 text-3xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Area: 차트 분석 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 animate-fade-in-up delay-300">
+            <!-- Chart 1: OPIC 분포 -->
+            <div class="glass-panel rounded-3xl p-7 flex flex-col">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <span class="w-2 h-6 rounded-full bg-blue-500 block"></span>
+                        전사 OPIC 등급 분포
+                    </h3>
+                </div>
+                <div class="relative flex-1 min-h-[320px] w-full">
+                    <canvas id="chart-opic"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 2: 부서별 자격증 보유 현황 -->
+            <div class="glass-panel rounded-3xl p-7 flex flex-col">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <span class="w-2 h-6 rounded-full bg-emerald-500 block"></span>
+                        부서별 주요 자격증 현황 (Top 5)
+                    </h3>
+                </div>
+                <div class="relative flex-1 min-h-[320px] w-full">
+                    <canvas id="chart-cert"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Area: 상세 데이터 그리드 -->
+        <div class="glass-panel rounded-3xl overflow-hidden animate-fade-in-up delay-300 shadow-xl border border-white/60">
+            <div class="p-6 border-b border-gray-200/50 bg-white/40 flex flex-col md:flex-row justify-between items-center gap-4">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <div class="p-1.5 bg-white rounded-lg shadow-sm">
+                        <i class="ph-duotone ph-table text-brand-600 text-lg"></i>
+                    </div>
+                    상세 데이터 원본
+                </h3>
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <div class="relative flex-1 md:w-72">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="ph-bold ph-magnifying-glass text-gray-400"></i>
+                        </div>
+                        <input type="text" id="search-input" class="bg-white/60 border border-white text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 block w-full pl-11 py-2.5 outline-none transition shadow-sm backdrop-blur-md placeholder-gray-400" placeholder="이름, 사번, 자격증 검색...">
+                    </div>
+                    <button id="btn-export" class="bg-gray-900 hover:bg-brand-600 text-white font-semibold rounded-xl text-sm px-5 py-2.5 flex items-center gap-2 transition-colors shadow-md">
+                        <i class="ph-bold ph-download-simple"></i> Excel 내보내기
+                    </button>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-600">
+                    <thead class="text-xs text-gray-500 uppercase bg-gray-50/50">
+                        <tr>
+                            <th scope="col" class="px-6 py-4 sortable group select-none" data-sort="번호">
+                                <div class="flex items-center gap-1">사번/연번 <i class="ph-bold ph-caret-up-down text-gray-300 group-hover:text-gray-500"></i></div>
+                            </th>
+                            <th scope="col" class="px-6 py-4 sortable group select-none" data-sort="부서">
+                                <div class="flex items-center gap-1">부서 <i class="ph-bold ph-caret-up-down text-gray-300 group-hover:text-gray-500"></i></div>
+                            </th>
+                            <th scope="col" class="px-6 py-4 sortable group select-none" data-sort="직급">
+                                <div class="flex items-center gap-1">직급 <i class="ph-bold ph-caret-up-down text-gray-300 group-hover:text-gray-500"></i></div>
+                            </th>
+                            <th scope="col" class="px-6 py-4 sortable group select-none" data-sort="OPIC등급">
+                                <div class="flex items-center gap-1">OPIC <i class="ph-bold ph-caret-up-down text-gray-300 group-hover:text-gray-500"></i></div>
+                            </th>
+                            <th scope="col" class="px-6 py-4">보유 자격증</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-gray-100/50 bg-white/20">
+                        <!-- rows rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <!-- Empty State -->
+            <div id="table-empty" class="hidden p-16 text-center text-gray-500">
+                <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="ph-duotone ph-ghost text-4xl text-gray-400"></i>
+                </div>
+                <p class="text-lg font-medium text-gray-600">검색된 데이터가 없습니다.</p>
+                <p class="text-sm mt-1 text-gray-400">필터나 검색어를 변경해 보세요.</p>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="mt-8 text-center text-xs text-gray-400">
+            Powered by HTML5, TailwindCSS, Chart.js, and SheetJS. Designed for Premium UX.
+        </div>
+    </div>
+
+    <!-- 스크립트: 로직 처리 -->
     <script>
-        // Initialize Lucide Icons
-        lucide.createIcons();
+        // 전역 상태
+        let rawData = [];
+        let filteredData = [];
+        let charts = { opic: null, cert: null };
+        let sortState = { column: '번호', direction: 'asc' };
 
-        // Mobile Menu Toggle Logic
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        const mobileMenu = document.getElementById('mobile-menu');
-        let isMenuOpen = false;
+        // -------------------------------------------------------------
+        // 1. 화면 전환 로직 (Upload <-> Dashboard)
+        // -------------------------------------------------------------
+        const showDashboard = () => {
+            const uploadScreen = document.getElementById('screen-upload');
+            const dashboardScreen = document.getElementById('screen-dashboard');
+            
+            // Fade out upload
+            uploadScreen.style.opacity = '0';
+            setTimeout(() => {
+                uploadScreen.classList.add('hidden');
+                
+                // Show and fade in dashboard
+                dashboardScreen.classList.remove('hidden');
+                // Trigger reflow
+                void dashboardScreen.offsetWidth;
+                dashboardScreen.style.opacity = '1';
+                
+                initDashboard();
+            }, 500); // match duration-700 mostly
+        };
 
-        mobileMenuBtn.addEventListener('click', () => {
-            isMenuOpen = !isMenuOpen;
-            if (isMenuOpen) {
-                mobileMenu.classList.remove('hidden');
-                // Change icon to X
-                mobileMenuBtn.innerHTML = '<i data-lucide="x" class="w-6 h-6"></i>';
-            } else {
-                mobileMenu.classList.add('hidden');
-                // Change icon back to Menu
-                mobileMenuBtn.innerHTML = '<i data-lucide="menu" class="w-6 h-6"></i>';
+        // -------------------------------------------------------------
+        // 2. 초기 더미 데이터 세팅
+        // -------------------------------------------------------------
+        const generateDummyData = () => {
+            const depts = ['프론트엔드팀', '백엔드팀', 'AI연구소', '프로덕트디자인팀', '사업기획팀', '인사총무팀'];
+            const ranks = ['주니어', '미들', '시니어', '리드', '본부장'];
+            const opics = ['AL', 'IH', 'IM', 'IL', 'NH', '없음'];
+            const certs = ['정보처리기사', 'SQLD', 'PMP', 'ADsP', 'AWS SAA', 'CKA', '없음'];
+            
+            const data = [];
+            for (let i = 1; i <= 200; i++) {
+                const hasCert = Math.random() > 0.2; // 80% have certs
+                let userCerts = '없음';
+                if (hasCert) {
+                    const c1 = certs[Math.floor(Math.random() * (certs.length - 1))];
+                    const c2 = Math.random() > 0.6 ? ', ' + certs[Math.floor(Math.random() * (certs.length - 1))] : '';
+                    const c3 = Math.random() > 0.9 ? ', ' + certs[Math.floor(Math.random() * (certs.length - 1))] : '';
+                    // Remove duplicates
+                    userCerts = [...new Set((c1 + c2 + c3).split(', '))].join(', ');
+                }
+
+                data.push({
+                    '번호': `EMP-${String(i).padStart(4, '0')}`,
+                    '부서': depts[Math.floor(Math.random() * depts.length)],
+                    '직급': ranks[Math.floor(Math.random() * ranks.length)],
+                    'OPIC등급': opics[Math.floor(Math.random() * opics.length)],
+                    '자격증': userCerts
+                });
             }
-            lucide.createIcons(); // Re-render icons
+            return data;
+        };
+
+        // -------------------------------------------------------------
+        // 3. 초기화 및 이벤트 리스너 등록
+        // -------------------------------------------------------------
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+            
+            // Chart.js 글로벌 설정 (고급스러운 폰트, 컬러)
+            Chart.defaults.font.family = "'Pretendard', sans-serif";
+            Chart.defaults.color = '#64748b';
+            Chart.defaults.scale.grid.color = 'rgba(0,0,0,0.04)';
         });
 
-        // Add slight shadow to header on scroll
-        const header = document.getElementById('header');
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 10) {
-                header.classList.add('shadow-sm');
-            } else {
-                header.classList.remove('shadow-sm');
+        const setupEventListeners = () => {
+            // 더미 데이터 시작 버튼
+            document.getElementById('btn-demo').addEventListener('click', () => {
+                rawData = generateDummyData();
+                showDashboard();
+            });
+
+            // 필터 이벤트
+            document.getElementById('filter-dept').addEventListener('change', applyFilters);
+            document.getElementById('filter-rank').addEventListener('change', applyFilters);
+            document.getElementById('search-input').addEventListener('input', applyFilters);
+            document.getElementById('reset-filters').addEventListener('click', () => {
+                document.getElementById('filter-dept').value = 'All';
+                document.getElementById('filter-rank').value = 'All';
+                document.getElementById('search-input').value = '';
+                applyFilters();
+            });
+
+            // 정렬 이벤트
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.addEventListener('click', () => {
+                    const col = th.getAttribute('data-sort');
+                    if (sortState.column === col) {
+                        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        sortState.column = col;
+                        sortState.direction = 'asc';
+                    }
+                    renderTable();
+                });
+            });
+
+            // 파일 업로드 이벤트 (메인 및 미니)
+            const mainDropZone = document.getElementById('main-drop-zone');
+            const mainFileInput = document.getElementById('main-file-upload');
+            const miniFileInput = document.getElementById('mini-file-upload');
+
+            const handleDragOver = (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over-active'); };
+            const handleDragLeave = (e) => { e.preventDefault(); e.currentTarget.classList.remove('drag-over-active'); };
+            const handleDrop = (e, inputElement) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove('drag-over-active');
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    inputElement.files = e.dataTransfer.files;
+                    processFile(inputElement.files[0]);
+                }
+            };
+
+            mainFileInput.addEventListener('change', (e) => processFile(e.target.files[0]));
+            miniFileInput.addEventListener('change', (e) => processFile(e.target.files[0]));
+            
+            mainDropZone.addEventListener('dragover', handleDragOver);
+            mainDropZone.addEventListener('dragleave', handleDragLeave);
+            mainDropZone.addEventListener('drop', (e) => handleDrop(e, mainFileInput));
+
+            // 엑셀 다운로드 이벤트
+            document.getElementById('btn-export').addEventListener('click', exportToExcel);
+        };
+
+        // -------------------------------------------------------------
+        // 4. 엑셀 파싱 로직 (SheetJS)
+        // -------------------------------------------------------------
+        const processFile = (file) => {
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                    
+                    const requiredColumns = ['번호', '부서', '직급', 'OPIC등급', '자격증'];
+                    const firstRow = json[0] || {};
+                    const missingColumns = requiredColumns.filter(col => !(col in firstRow));
+
+                    if (missingColumns.length > 0) {
+                        alert(`엑셀 구조가 맞지 않습니다.\n다음 필수 컬럼이 필요합니다:\n${missingColumns.join(', ')}`);
+                        return;
+                    }
+
+                    rawData = json;
+                    
+                    // 필터 초기화
+                    if(document.getElementById('filter-dept')) document.getElementById('filter-dept').value = 'All';
+                    if(document.getElementById('filter-rank')) document.getElementById('filter-rank').value = 'All';
+                    if(document.getElementById('search-input')) document.getElementById('search-input').value = '';
+                    
+                    if(document.getElementById('screen-dashboard').classList.contains('hidden')){
+                        showDashboard();
+                    } else {
+                        initDashboard(); // 이미 대시보드 화면이면 리프레시
+                    }
+
+                } catch (error) {
+                    alert('파일을 읽는 중 오류가 발생했습니다. 올바른 엑셀 파일인지 확인해주세요.');
+                    console.error(error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        // -------------------------------------------------------------
+        // 5. 코어 렌더링 파이프라인
+        // -------------------------------------------------------------
+        const initDashboard = () => {
+            populateDropdowns();
+            applyFilters();
+        };
+
+        const populateDropdowns = () => {
+            const depts = [...new Set(rawData.map(d => String(d.부서 || '미분류').trim()))].sort();
+            const ranks = [...new Set(rawData.map(d => String(d.직급 || '미분류').trim()))].sort();
+
+            const deptSelect = document.getElementById('filter-dept');
+            const rankSelect = document.getElementById('filter-rank');
+
+            deptSelect.innerHTML = '<option value="All">모든 부서</option>' + depts.map(d => `<option value="${d}">${d}</option>`).join('');
+            rankSelect.innerHTML = '<option value="All">모든 직급</option>' + ranks.map(r => `<option value="${r}">${r}</option>`).join('');
+        };
+
+        const applyFilters = () => {
+            const deptFilter = document.getElementById('filter-dept').value;
+            const rankFilter = document.getElementById('filter-rank').value;
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+
+            filteredData = rawData.filter(d => {
+                const matchDept = deptFilter === 'All' || d.부서 === deptFilter;
+                const matchRank = rankFilter === 'All' || d.직급 === rankFilter;
+                const matchSearch = Object.values(d).some(val => String(val).toLowerCase().includes(searchTerm));
+                
+                return matchDept && matchRank && matchSearch;
+            });
+
+            updateKPIs();
+            renderCharts();
+            renderTable();
+        };
+
+        // -------------------------------------------------------------
+        // 6. UI 업데이트 로직 (KPI, 차트, 테이블)
+        // -------------------------------------------------------------
+        const updateKPIs = () => {
+            const total = filteredData.length;
+            let certCount = 0;
+            let highOpicCount = 0;
+
+            filteredData.forEach(d => {
+                const cert = String(d.자격증 || '').trim();
+                if (cert && cert !== '없음' && cert !== '-') certCount++;
+
+                const opic = String(d.OPIC등급 || '').trim().toUpperCase();
+                if (opic === 'AL' || opic === 'IH') highOpicCount++;
+            });
+
+            const certRate = total > 0 ? ((certCount / total) * 100).toFixed(1) : 0;
+            const opicRate = total > 0 ? ((highOpicCount / total) * 100).toFixed(1) : 0;
+
+            // Animate Numbers (간단한 카운트업 효과 가능하나 DOM 업데이트로 대체)
+            document.getElementById('kpi-total').textContent = total.toLocaleString();
+            document.getElementById('kpi-cert').textContent = certRate;
+            document.getElementById('kpi-opic').textContent = opicRate;
+        };
+
+        const createGradient = (ctx, colorStart, colorEnd) => {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, colorStart);
+            gradient.addColorStop(1, colorEnd);
+            return gradient;
+        };
+
+        const renderCharts = () => {
+            renderOpicChart();
+            renderCertChart();
+        };
+
+        const renderOpicChart = () => {
+            const canvas = document.getElementById('chart-opic');
+            const ctx = canvas.getContext('2d');
+            if (charts.opic) charts.opic.destroy();
+
+            const opicOrder = ['AL', 'IH', 'IM', 'IL', 'NH', '없음'];
+            const counts = { AL: 0, IH: 0, IM: 0, IL: 0, NH: 0, '없음': 0 };
+
+            filteredData.forEach(d => {
+                let grade = String(d.OPIC등급 || '').trim().toUpperCase();
+                if(grade.startsWith('IM')) grade = 'IM'; 
+                if (counts[grade] !== undefined) counts[grade]++;
+                else counts['없음']++;
+            });
+
+            const data = opicOrder.map(grade => counts[grade]);
+            
+            // 고급스러운 그라데이션 컬러 적용
+            const gradients = [
+                createGradient(ctx, '#6366f1', '#4f46e5'), // AL: Indigo
+                createGradient(ctx, '#10b981', '#059669'), // IH: Emerald
+                createGradient(ctx, '#f59e0b', '#d97706'), // IM: Amber
+                createGradient(ctx, '#f97316', '#ea580c'), // IL: Orange
+                createGradient(ctx, '#ef4444', '#dc2626'), // NH: Red
+                createGradient(ctx, '#94a3b8', '#64748b'), // 없음: Slate
+            ];
+
+            charts.opic = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: opicOrder,
+                    datasets: [{
+                        label: '인원 수',
+                        data: data,
+                        backgroundColor: gradients,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { padding: 12, cornerRadius: 8 } },
+                    scales: {
+                        x: { grid: { display: false }, border: { display: false } },
+                        y: { beginAtZero: true, border: { display: false }, ticks: { stepSize: 1 } }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        };
+
+        const renderCertChart = () => {
+            const ctx = document.getElementById('chart-cert').getContext('2d');
+            if (charts.cert) charts.cert.destroy();
+
+            let allCerts = [];
+            filteredData.forEach(d => {
+                const certs = String(d.자격증 || '').split(',').map(c => c.trim()).filter(c => c && c !== '없음' && c !== '-');
+                allCerts.push(...certs);
+            });
+
+            const certCounts = {};
+            allCerts.forEach(c => certCounts[c] = (certCounts[c] || 0) + 1);
+            
+            const sortedCerts = Object.keys(certCounts).sort((a, b) => certCounts[b] - certCounts[a]);
+            const topCerts = sortedCerts.slice(0, 5);
+            const depts = [...new Set(filteredData.map(d => String(d.부서 || '미분류').trim()))].sort();
+            
+            const datasetsMap = {};
+            topCerts.forEach(cert => datasetsMap[cert] = new Array(depts.length).fill(0));
+            datasetsMap['기타'] = new Array(depts.length).fill(0);
+
+            filteredData.forEach(d => {
+                const deptIndex = depts.indexOf(String(d.부서 || '미분류').trim());
+                if(deptIndex === -1) return;
+
+                const certs = String(d.자격증 || '').split(',').map(c => c.trim()).filter(c => c && c !== '없음' && c !== '-');
+                certs.forEach(c => {
+                    if (topCerts.includes(c)) datasetsMap[c][deptIndex]++;
+                    else datasetsMap['기타'][deptIndex]++;
+                });
+            });
+
+            if(topCerts.length === 0) {
+                 charts.cert = new Chart(ctx, { type: 'bar', data: { labels: ['데이터 없음'], datasets: [] }, options: { maintainAspectRatio: false } });
+                return;
             }
-        });
+
+            const hexColors = ['#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#94a3b8'];
+            const datasets = topCerts.map((cert, index) => ({
+                label: cert,
+                data: datasetsMap[cert],
+                backgroundColor: hexColors[index],
+                borderRadius: 4
+            }));
+            
+            if (datasetsMap['기타'].some(val => val > 0)) {
+                datasets.push({ label: '기타', data: datasetsMap['기타'], backgroundColor: hexColors[5], borderRadius: 4 });
+            }
+
+            charts.cert = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: depts, datasets: datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } },
+                        tooltip: { mode: 'index', intersect: false, padding: 12, cornerRadius: 8 }
+                    },
+                    scales: {
+                        x: { stacked: true, grid: { display: false }, border: { display: false } },
+                        y: { stacked: true, beginAtZero: true, border: { display: false }, ticks: { stepSize: 1 } }
+                    },
+                    animation: { duration: 1000, easing: 'easeOutQuart' }
+                }
+            });
+        };
+
+        const renderTable = () => {
+            const tbody = document.getElementById('table-body');
+            const emptyState = document.getElementById('table-empty');
+            
+            const sortedData = [...filteredData].sort((a, b) => {
+                let valA = String(a[sortState.column] || '');
+                let valB = String(b[sortState.column] || '');
+                if(sortState.direction === 'asc') return valA.localeCompare(valB, 'ko-KR', {numeric: true});
+                else return valB.localeCompare(valA, 'ko-KR', {numeric: true});
+            });
+
+            tbody.innerHTML = '';
+            
+            if (sortedData.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            sortedData.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                tr.className = `hover:bg-white/60 transition-colors duration-200 row-enter`;
+                // Staggered animation for table rows (max 20 rows visible for animation to avoid performance hit)
+                if(index < 15) tr.style.animationDelay = `${index * 30}ms`;
+                else tr.style.opacity = 1; tr.style.animation = 'none';
+
+                // OPIC 고급 배지
+                let opic = String(row.OPIC등급 || '').trim();
+                let badgeClass = 'bg-gray-100 text-gray-600 border border-gray-200';
+                let icon = '';
+                if(['AL'].includes(opic.toUpperCase())) { badgeClass = 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm'; icon = '👑 '; }
+                else if(['IH'].includes(opic.toUpperCase())) { badgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm'; }
+                else if(['IM', 'IM1', 'IM2', 'IM3'].includes(opic.toUpperCase())) { badgeClass = 'bg-amber-50 text-amber-700 border border-amber-200'; }
+                else if(['IL', 'NH'].includes(opic.toUpperCase())) { badgeClass = 'bg-orange-50 text-orange-700 border border-orange-200'; }
+
+                // 자격증 태그 (세련된 스타일)
+                const certList = String(row.자격증 || '').split(',').map(c => c.trim()).filter(c => c && c !== '없음');
+                let certHtml = '<span class="text-gray-300 italic">보유 내역 없음</span>';
+                if(certList.length > 0) {
+                    certHtml = certList.map(c => `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50/80 text-indigo-700 border border-indigo-100 mr-1 mb-1 backdrop-blur-sm">${c}</span>`).join('');
+                }
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 font-bold text-gray-900 whitespace-nowrap">${row.번호 || '-'}</td>
+                    <td class="px-6 py-4 font-medium">${row.부서 || '-'}</td>
+                    <td class="px-6 py-4">${row.직급 || '-'}</td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${badgeClass}">
+                            ${icon}${opic || '-'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-normal flex flex-wrap gap-y-1">${certHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        // -------------------------------------------------------------
+        // 7. 엑셀 다운로드
+        // -------------------------------------------------------------
+        const exportToExcel = () => {
+            if(filteredData.length === 0) {
+                alert('다운로드할 데이터가 없습니다.');
+                return;
+            }
+            const ws = XLSX.utils.json_to_sheet(filteredData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "역량현황_분석");
+            const dateStr = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `임직원_역량현황_${dateStr}.xlsx`);
+        };
     </script>
 </body>
 </html>
