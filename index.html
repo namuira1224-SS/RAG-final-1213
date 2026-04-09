@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>삼성전자 | 스마트폰, TV, 가전</title>
+    
+    <!-- Noto Sans KR 폰트 적용 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans KR"', 'sans-serif'],
+                    },
+                    colors: {
+                        samsung: {
+                            blue: '#1428A0', // 삼성 블루 컬러
+                            light: '#f4f4f4',
+                            dark: '#000000',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* 부드러운 스크롤 효과 및 기본 설정 */
+        html { scroll-behavior: smooth; }
+        body { -webkit-font-smoothing: antialiased; }
+        
+        /* 배너 애니메이션 */
+        .fade-in {
+            animation: fadeIn 1s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 숨김 스크롤바 (가로 스크롤 영역용) */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-white text-gray-900 font-sans pt-16">
+
+    <!-- Header / Navigation -->
+    <header class="fixed top-0 w-full bg-white/90 backdrop-blur-md z-50 border-b border-gray-200 transition-all duration-300" id="header">
+        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                
+                <!-- Logo & Left Menu -->
+                <div class="flex items-center gap-8">
+                    <!-- Samsung Logo (Text substitute for demo) -->
+                    <a href="#" class="font-black text-2xl tracking-tighter text-black">
+                        SAMSUNG
+                    </a>
+                    
+                    <!-- Desktop Menu -->
+                    <nav class="hidden lg:flex space-x-6 font-medium text-sm">
+                        <a href="#" class="hover:text-blue-600 transition-colors py-2">모바일</a>
+                        <a href="#" class="hover:text-blue-600 transition-colors py-2">TV/오디오</a>
+                        <a href="#" class="hover:text-blue-600 transition-colors py-2">가전</a>
+                        <a href="#" class="hover:text-blue-600 transition-colors py-2">컴퓨팅</a>
+                        <a href="#" class="hover:text-blue-600 transition-colors py-2">디스플레이</a>
+                        <a href="#" class="hover:text-blue-600 transition-colors py-2">SmartThings</a>
+                    </nav>
+                </div>
+
+                <!-- Right Menu & Icons -->
+                <div class="flex items-center gap-4">
+                    <nav class="hidden lg:flex space-x-6 font-medium text-sm mr-4">
+                        <a href="#" class="hover:text-blue-600 transition-colors py-2">스토리</a>
+                        <a href="#" class="hover:text-blue-600 transition-colors py-2">고객지원</a>
+                    </nav>
+                    
+                    <button class="p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label="검색">
+                        <i data-lucide="search" class="w-5 h-5"></i>
+                    </button>
+                    <button class="p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label="장바구니">
+                        <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                    </button>
+                    <button class="hidden sm:block p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label="내 계정">
+                        <i data-lucide="user" class="w-5 h-5"></i>
+                    </button>
+                    
+                    <!-- Mobile Menu Toggle -->
+                    <button id="mobile-menu-btn" class="lg:hidden p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label="메뉴">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobile-menu" class="hidden lg:hidden bg-white border-t border-gray-200 overflow-y-auto max-h-[calc(100vh-4rem)]">
+            <div class="px-4 py-6 space-y-4 font-medium">
+                <a href="#" class="block text-lg hover:text-blue-600">모바일</a>
+                <a href="#" class="block text-lg hover:text-blue-600">TV/오디오</a>
+                <a href="#" class="block text-lg hover:text-blue-600">가전</a>
+                <a href="#" class="block text-lg hover:text-blue-600">컴퓨팅</a>
+                <a href="#" class="block text-lg hover:text-blue-600">디스플레이</a>
+                <a href="#" class="block text-lg hover:text-blue-600">SmartThings</a>
+                <hr class="my-4">
+                <a href="#" class="block text-lg hover:text-blue-600">스토리</a>
+                <a href="#" class="block text-lg hover:text-blue-600">고객지원</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Hero Section (Main Banner) -->
+        <section class="relative bg-samsung-light overflow-hidden">
+            <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col-reverse lg:flex-row items-center justify-between py-16 lg:py-24">
+                    
+                    <!-- Text Content -->
+                    <div class="w-full lg:w-1/2 mt-10 lg:mt-0 text-center lg:text-left fade-in">
+                        <span class="inline-block py-1 px-3 rounded-full bg-blue-100 text-blue-700 text-sm font-bold mb-4">신제품 출시</span>
+                        <h1 class="text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight mb-6">
+                            Galaxy S26 Ultra
+                        </h1>
+                        <p clas="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto lg:mx-0">
+                            모바일 AI의 새로운 시대. 압도적인 성능과 혁신적인 카메라로 일상을 특별하게 만드세요.
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                            <a href="#" class="px-8 py-3 bg-black text-white rounded-full font-bold hover:bg-gray-800 transition-colors">
+                                구매하기
+                            </a>
+                            <a href="#" class="px-8 py-3 bg-white text-black border border-gray-300 rounded-full font-bold hover:bg-gray-50 transition-colors">
+                                자세히 보기
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Hero Image -->
+                    <div class="w-full lg:w-1/2 flex justify-center fade-in" style="animation-delay: 0.2s;">
+                        <!-- Placeholder image for Smartphone -->
+                        <img src="https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=800&q=80" 
+                             alt="Galaxy Smartphone" 
+                             class="max-w-full h-auto object-cover rounded-3xl shadow-2xl"
+                             onerror="this.src='https://via.placeholder.com/800x600?text=Galaxy+S26+Ultra'">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Highlights / Categories -->
+        <section class="py-20 bg-white">
+            <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl md:text-4xl font-bold text-center mb-12">당신을 위한 추천 제품</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    
+                    <!-- Card 1 -->
+                    <a href="#" class="group block bg-gray-50 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                        <div class="aspect-square mb-6 overflow-hidden rounded-2xl bg-white flex items-center justify-center p-4">
+                            <img src="https://images.unsplash.com/photo-1593640408182-31c70c8268f5?auto=format&fit=crop&w=400&q=80" alt="Galaxy Book" class="object-contain w-full h-full group-hover:scale-105 transition-transform duration-500">
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Galaxy Book4 Pro</h3>
+                        <p class="text-gray-500 text-sm mb-4">가볍게, 하지만 강력하게.</p>
+                        <span class="text-blue-600 font-bold text-sm">자세히 보기 &rarr;</span>
+                    </a>
+
+                    <!-- Card 2 -->
+                    <a href="#" class="group block bg-gray-50 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                        <div class="aspect-square mb-6 overflow-hidden rounded-2xl bg-white flex items-center justify-center p-4">
+                            <img src="https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=400&q=80" alt="Neo QLED 8K" class="object-contain w-full h-full group-hover:scale-105 transition-transform duration-500">
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Neo QLED 8K</h3>
+                        <p class="text-gray-500 text-sm mb-4">경계를 넘어선 차원이 다른 화질.</p>
+                        <span class="text-blue-600 font-bold text-sm">자세히 보기 &rarr;</span>
+                    </a>
+
+                    <!-- Card 3 -->
+                    <a href="#" class="group block bg-gray-50 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                        <div class="aspect-square mb-6 overflow-hidden rounded-2xl bg-white flex items-center justify-center p-4">
+                            <img src="https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?auto=format&fit=crop&w=400&q=80" alt="Bespoke Refrigerator" class="object-contain w-full h-full group-hover:scale-105 transition-transform duration-500">
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">BESPOKE 냉장고</h3>
+                        <p class="text-gray-500 text-sm mb-4">나만의 컬러, 나만의 라이프스타일.</p>
+                        <span class="text-blue-600 font-bold text-sm">자세히 보기 &rarr;</span>
+                    </a>
+
+                    <!-- Card 4 -->
+                    <a href="#" class="group block bg-gray-50 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                        <div class="aspect-square mb-6 overflow-hidden rounded-2xl bg-white flex items-center justify-center p-4">
+                            <img src="https://images.unsplash.com/photo-1579586337278-3befd40fd17a?auto=format&fit=crop&w=400&q=80" alt="Galaxy Watch" class="object-contain w-full h-full group-hover:scale-105 transition-transform duration-500">
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Galaxy Watch6</h3>
+                        <p class="text-gray-500 text-sm mb-4">완벽한 일상을 위한 건강 파트너.</p>
+                        <span class="text-blue-600 font-bold text-sm">자세히 보기 &rarr;</span>
+                    </a>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Second Banner (Event / Promo) -->
+        <section class="py-12 bg-black text-white relative">
+            <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-8 py-10">
+                    <div class="md:w-1/2 space-y-6 text-center md:text-left">
+                        <h2 class="text-3xl sm:text-4xl font-bold">삼성닷컴 단독 혜택</h2>
+                        <p class="text-gray-300 text-lg">
+                            지금 가입하고 첫 구매 할인 쿠폰과 무료 배송 혜택을 누리세요.<br>
+                            매월 진행되는 특별한 이벤트를 놓치지 마세요.
+                        </p>
+                        <button class="px-8 py-3 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-colors mt-4">
+                            혜택 확인하기
+                        </button>
+                    </div>
+                    <div class="md:w-1/2 grid grid-cols-2 gap-4">
+                        <div class="bg-gray-800 p-6 rounded-2xl text-center">
+                            <i data-lucide="truck" class="w-10 h-10 mx-auto mb-3 text-samsung-blue text-white"></i>
+                            <h4 class="font-bold text-lg">전 제품 무료 배송</h4>
+                        </div>
+                        <div class="bg-gray-800 p-6 rounded-2xl text-center">
+                            <i data-lucide="shield-check" class="w-10 h-10 mx-auto mb-3 text-white"></i>
+                            <h4 class="font-bold text-lg">정품 100% 보장</h4>
+                        </div>
+                        <div class="bg-gray-800 p-6 rounded-2xl text-center">
+                            <i data-lucide="credit-card" class="w-10 h-10 mx-auto mb-3 text-white"></i>
+                            <h4 class="font-bold text-lg">무이자 할부 혜택</h4>
+                        </div>
+                        <div class="bg-gray-800 p-6 rounded-2xl text-center">
+                            <i data-lucide="headphones" class="w-10 h-10 mx-auto mb-3 text-white"></i>
+                            <h4 class="font-bold text-lg">24시간 챗봇 상담</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-50 border-t border-gray-200 pt-16 pb-8 text-sm">
+        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Footer Links Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
+                <div>
+                    <h4 class="font-bold text-base mb-4 text-black">제품</h4>
+                    <ul class="space-y-3 text-gray-600">
+                        <li><a href="#" class="hover:text-black hover:underline">스마트폰</a></li>
+                        <li><a href="#" class="hover:text-black hover:underline">태블릿</a></li>
+                        <li><a href="#" class="hover:text-black hover:underline">오디오</a></li>
+                        <li><a href="#" class="hover:text-black hover:underline">워치</a></li>
+                        <li><a href="#" class="hover:text-black hover:underline">스마트 스위치</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-base mb-4 text-black">스토어</h4>
+                    <ul class="space-y-3 text-gray-600">
+                        <li><a href="#" class="hover:text-black hover:underline">삼성 강남</a></li>
+                        <li><a href="#" class="hover:text-black hover:underline">삼성 스토어 매장 찾기</a></li>
+                        <li><a href="#" class="hover:text-black hover:underline">삼성닷컴 혜택</a></li>
+                        <li><a href="#" class="hover:text-black hover:underline">캠퍼스 스토어</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-base mb-4 text-black">고객지원</h4>
+                    <ul class="space-y-3 text-gray-600">
+                        <li><a href="#" class="hover:text-black hover:underline">고객지원 홈</a></li>
+                        <li><a href="#" class="hover:text-black hover:underline">제품 등록</a></li>
+                        <li><a href="#" class="hover:text-black hover:underline">서비스 센터 찾기</a></li>
+                        <li><a href="#" class="hover:text-black hover:underline">온라인 상담</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-base mb-4 text-black">회사 정보</h4>
+                    <ul class="space-y-3 text-gray-600">
+                        <li><a href="#" class="hover:text-black hover:underline">회사소개</a></li>
+                        <li><a href="#" class="hover:text-black hover:underline">투자자 정보</a></li>
+                        <li><a href="#" class="hover:text-black hover:underline">지속가능경영</a></li>
+                        <li><a href="#" class="hover:text-black hover:underline">인재채용</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <hr class="border-gray-200 mb-8">
+
+            <!-- Bottom Footer -->
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
+                <div class="text-gray-500 text-xs sm:text-sm text-center lg:text-left space-y-2">
+                    <p>삼성전자 주식회사 | 대표이사 : 한종희 | 사업자등록번호 : 119-81-06619</p>
+                    <p>통신판매업신고 : 제 2020-경기수원-2511 호 | 사업장주소 : 경기도 수원시 영통구 삼성로 129</p>
+                    <p>본 사이트의 콘텐츠는 저작권법의 보호를 받는 바 무단 전재, 복사, 배포 등을 금합니다.</p>
+                    <p class="mt-4 font-bold text-gray-800">Copyright © 1995-2026 SAMSUNG All Rights reserved.</p>
+                </div>
+
+                <div class="flex items-center gap-4 text-gray-600">
+                    <a href="#" class="hover:text-black" aria-label="Facebook"><i data-lucide="facebook" class="w-5 h-5"></i></a>
+                    <a href="#" class="hover:text-black" aria-label="Twitter"><i data-lucide="twitter" class="w-5 h-5"></i></a>
+                    <a href="#" class="hover:text-black" aria-label="Instagram"><i data-lucide="instagram" class="w-5 h-5"></i></a>
+                    <a href="#" class="hover:text-black" aria-label="YouTube"><i data-lucide="youtube" class="w-5 h-5"></i></a>
+                </div>
+            </div>
+            
+            <div class="mt-8 flex flex-wrap justify-center lg:justify-start gap-4 text-xs font-bold text-gray-800">
+                <a href="#" class="hover:underline">이용약관</a>
+                <a href="#" class="hover:underline text-black">개인정보처리방침</a>
+                <a href="#" class="hover:underline">이메일무단수집거부</a>
+                <a href="#" class="hover:underline">아이디어 정책</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Mobile Menu Toggle Logic
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        let isMenuOpen = false;
+
+        mobileMenuBtn.addEventListener('click', () => {
+            isMenuOpen = !isMenuOpen;
+            if (isMenuOpen) {
+                mobileMenu.classList.remove('hidden');
+                // Change icon to X
+                mobileMenuBtn.innerHTML = '<i data-lucide="x" class="w-6 h-6"></i>';
+            } else {
+                mobileMenu.classList.add('hidden');
+                // Change icon back to Menu
+                mobileMenuBtn.innerHTML = '<i data-lucide="menu" class="w-6 h-6"></i>';
+            }
+            lucide.createIcons(); // Re-render icons
+        });
+
+        // Add slight shadow to header on scroll
+        const header = document.getElementById('header');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 10) {
+                header.classList.add('shadow-sm');
+            } else {
+                header.classList.remove('shadow-sm');
+            }
+        });
+    </script>
+</body>
+</html>
