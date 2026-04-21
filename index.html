@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -6,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>프리미엄 신뢰성 승인 관리</title>
     
-    <!-- 폰트: 프리텐다드 (최고급 가독성) -->
+    <!-- 폰트: 프리텐다드 -->
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
     
     <!-- Tailwind CSS -->
@@ -15,7 +14,7 @@
     <!-- SheetJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
-    <!-- 아이콘 라이브러리 (Lucide) -->
+    <!-- 아이콘 라이브러리 -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <script>
@@ -36,7 +35,7 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* 배경 애니메이션 효과 */
+        /* 배경 애니메이션 */
         .bg-shape {
             position: fixed; filter: blur(100px); opacity: 0.5; z-index: -1;
             animation: float 20s infinite ease-in-out alternate;
@@ -49,40 +48,26 @@
             100% { transform: translate(5%, 5%) scale(1.1); }
         }
 
-        /* UI 등장 애니메이션 */
+        /* 애니메이션 */
         .fade-in-up {
             animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             opacity: 0; transform: translateY(20px);
         }
-        
-        @keyframes fadeInUp {
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
 
-        /* 테이블 로우 순차적 등장 애니메이션 */
         .row-enter {
-            animation: rowFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            opacity: 0; transform: translateY(10px);
+            animation: rowFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0; transform: translateY(5px);
         }
-        
-        @keyframes rowFadeIn {
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes rowFadeIn { to { opacity: 1; transform: translateY(0); } }
 
-        /* 글래스모피즘 & 카드 스타일 */
+        /* 글래스모피즘 */
         .glass-card {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.5);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0,0,0,0.02);
-        }
-
-        /* 그라데이션 텍스트 */
-        .text-gradient {
-            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
 
         /* 로딩 스피너 */
@@ -94,15 +79,24 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 커스텀 셀렉트 화살표 디자인 */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1rem;
+        }
     </style>
 </head>
 <body class="bg-[#f8fafc] text-slate-800 min-h-screen relative overflow-x-hidden antialiased">
 
-    <!-- 감각적인 배경 요소 -->
+    <!-- 배경 요소 -->
     <div class="bg-shape shape-1"></div>
     <div class="bg-shape shape-2"></div>
 
-    <!-- 전체 로딩 오버레이 -->
+    <!-- 로딩 오버레이 -->
     <div id="loadingOverlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center transition-opacity duration-500">
         <div class="spinner mb-4"></div>
         <p class="text-slate-600 font-medium animate-pulse">데이터를 동기화하고 있습니다...</p>
@@ -118,7 +112,7 @@
                     <span>RELIABILITY APPROVAL SYSTEM</span>
                 </div>
                 <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">
-                    모델별 <span class="text-gradient">신뢰성 승인</span> 관리
+                    모델별 <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">신뢰성 승인</span> 관리
                 </h1>
             </div>
             
@@ -131,13 +125,13 @@
             </div>
         </header>
 
-        <!-- 수동 업로드 (에러 시에만 표시됨) -->
+        <!-- 수동 업로드 영역 -->
         <div id="manualUploadSection" class="hidden glass-card rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 fade-in-up" style="animation-delay: 0.1s;">
             <div class="flex items-center gap-3 text-amber-600">
                 <div class="p-2 bg-amber-100 rounded-full"><i data-lucide="alert-circle" class="w-5 h-5"></i></div>
                 <div>
                     <h3 class="font-bold text-slate-800">로컬 환경 감지됨</h3>
-                    <p class="text-sm text-slate-500">서버에서 파일을 찾을 수 없습니다. 아래 버튼으로 엑셀 파일을 직접 업로드해주세요.</p>
+                    <p class="text-sm text-slate-500">서버에서 파일을 찾을 수 없습니다. 엑셀 파일을 직접 업로드해주세요.</p>
                 </div>
             </div>
             <label class="cursor-pointer bg-white border border-slate-200 hover:border-primary-500 hover:bg-primary-50 text-slate-700 px-6 py-3 rounded-xl transition-all font-medium flex items-center gap-2 shadow-sm">
@@ -147,31 +141,60 @@
             </label>
         </div>
 
-        <!-- 검색 및 필터 컨트롤 -->
-        <div class="glass-card rounded-2xl p-2 pl-4 fade-in-up flex flex-col md:flex-row gap-2 items-center" style="animation-delay: 0.2s;">
+        <!-- 다중 필터 컨트롤 영역 (엑셀 콤보박스 방식) -->
+        <div class="glass-card rounded-2xl p-5 fade-in-up" style="animation-delay: 0.2s;">
+            <div class="flex items-center gap-2 mb-4 text-slate-700 font-semibold text-sm">
+                <i data-lucide="filter" class="w-4 h-4"></i>
+                데이터 필터링 (다중 선택 가능)
+            </div>
             
-            <div class="flex items-center gap-2 w-full md:w-auto border-b md:border-b-0 md:border-r border-slate-200 pb-2 md:pb-0 md:pr-4">
-                <i data-lucide="filter" class="w-4 h-4 text-slate-400"></i>
-                <select id="searchColumn" class="bg-transparent text-slate-700 font-medium focus:outline-none w-full md:w-32 py-2 cursor-pointer">
-                    <option value="모델명">모델명</option>
-                    <option value="마케팅명">마케팅명</option>
-                    <option value="프로젝트명">프로젝트명</option>
-                    <option value="협력사">협력사</option>
-                    <option value="구분">구분</option>
-                </select>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                
+                <!-- 협력사 필터 -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-semibold text-slate-500 px-1">협력사</label>
+                    <select id="filter-partner" class="w-full bg-slate-50/80 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all cursor-pointer">
+                        <option value="">전체 (All)</option>
+                    </select>
+                </div>
+
+                <!-- 모델명 필터 -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-semibold text-slate-500 px-1">모델명</label>
+                    <select id="filter-model" class="w-full bg-slate-50/80 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all cursor-pointer">
+                        <option value="">전체 (All)</option>
+                    </select>
+                </div>
+
+                <!-- 마케팅명 필터 -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-semibold text-slate-500 px-1">마케팅명</label>
+                    <select id="filter-marketing" class="w-full bg-slate-50/80 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all cursor-pointer">
+                        <option value="">전체 (All)</option>
+                    </select>
+                </div>
+
+                <!-- 프로젝트명 필터 -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-semibold text-slate-500 px-1">프로젝트명</label>
+                    <select id="filter-project" class="w-full bg-slate-50/80 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all cursor-pointer">
+                        <option value="">전체 (All)</option>
+                    </select>
+                </div>
+
+                <!-- 구분 필터 -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-semibold text-slate-500 px-1">구분</label>
+                    <select id="filter-type" class="w-full bg-slate-50/80 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all cursor-pointer">
+                        <option value="">전체 (All)</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="flex-1 flex items-center w-full px-2">
-                <i data-lucide="search" class="w-5 h-5 text-slate-400 mr-2"></i>
-                <input type="text" id="searchInput" placeholder="검색어를 입력하고 Enter를 누르세요..." class="w-full bg-transparent border-none focus:ring-0 text-slate-800 placeholder-slate-400 py-3 text-lg focus:outline-none">
-            </div>
-
-            <div class="flex gap-2 w-full md:w-auto mt-2 md:mt-0 p-2 md:p-0">
-                <button id="resetBtn" class="px-5 py-3 rounded-xl text-slate-600 hover:bg-slate-100 font-medium transition-colors flex items-center gap-2 w-full md:w-auto justify-center">
-                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i> 초기화
-                </button>
-                <button id="searchBtn" class="px-8 py-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-medium shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/50 hover:-translate-y-0.5 flex items-center gap-2 w-full md:w-auto justify-center">
-                    검색
+            <!-- 초기화 버튼 -->
+            <div class="mt-4 flex justify-end">
+                <button id="resetFiltersBtn" class="text-sm px-4 py-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 font-medium transition-colors flex items-center gap-1.5">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> 필터 초기화
                 </button>
             </div>
         </div>
@@ -179,17 +202,11 @@
         <!-- 데이터 테이블 카드 -->
         <div class="glass-card rounded-3xl overflow-hidden flex-1 flex flex-col fade-in-up" style="animation-delay: 0.3s;">
             
-            <!-- 상단 요약 바 -->
             <div class="px-6 py-4 bg-white/50 border-b border-slate-100 flex justify-between items-center">
                 <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                     승인 데이터 목록
                     <span id="resultCount" class="bg-primary-100 text-primary-700 py-0.5 px-2.5 rounded-full text-xs font-bold">0</span>
                 </h2>
-                <div class="flex gap-2">
-                    <button class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="새로고침" onclick="location.reload()">
-                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                    </button>
-                </div>
             </div>
 
             <div class="overflow-x-auto">
@@ -200,7 +217,7 @@
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">모델명</th>
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">마케팅명</th>
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">프로젝트명</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">구분</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap text-center">구분</th>
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">승인일</th>
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">특이사항</th>
                         </tr>
@@ -216,23 +233,31 @@
                 <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400">
                     <i data-lucide="inbox" class="w-10 h-10"></i>
                 </div>
-                <h3 class="text-xl font-bold text-slate-700 mb-2">표시할 데이터가 없습니다</h3>
-                <p class="text-slate-500 max-w-md">엑셀 파일이 비어있거나 검색 조건에 맞는 결과가 없습니다. 검색어를 변경해보세요.</p>
+                <h3 class="text-xl font-bold text-slate-700 mb-2">조건에 맞는 데이터가 없습니다</h3>
+                <p class="text-slate-500 max-w-md">선택한 필터 조건에 해당하는 승인 내역이 없습니다. 다른 필터를 선택해주세요.</p>
             </div>
         </div>
         
-        <footer class="text-center text-slate-400 text-sm mt-4 fade-in-up" style="animation-delay: 0.4s;">
+        <footer class="text-center text-slate-400 text-sm mt-4 fade-in-up pb-8" style="animation-delay: 0.4s;">
             &copy; Reliability Approval Dashboard. Automatically synced with Excel data.
         </footer>
     </main>
 
     <script>
-        // Lucide 아이콘 초기화
         lucide.createIcons();
 
         let globalData = [];
         const FILE_NAME = './모델별 신뢰성 승인 관리.xlsx';
         const columns = ['협력사', '모델명', '마케팅명', '프로젝트명', '구분', '승인일', '특이사항'];
+
+        // 콤보박스 필터 대상과 해당 컬럼명 매핑
+        const filterConfig = [
+            { id: 'filter-partner', colName: '협력사' },
+            { id: 'filter-model', colName: '모델명' },
+            { id: 'filter-marketing', colName: '마케팅명' },
+            { id: 'filter-project', colName: '프로젝트명' },
+            { id: 'filter-type', colName: '구분' }
+        ];
 
         const elements = {
             loadingOverlay: document.getElementById('loadingOverlay'),
@@ -240,24 +265,20 @@
             manualUploadSection: document.getElementById('manualUploadSection'),
             tableBody: document.getElementById('tableBody'),
             noDataMessage: document.getElementById('noDataMessage'),
-            searchInput: document.getElementById('searchInput'),
-            searchColumn: document.getElementById('searchColumn'),
             resultCount: document.getElementById('resultCount')
         };
 
-        // 초기 로드
         window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => loadExcelFromServer(), 500); // 부드러운 애니메이션을 위해 0.5초 대기
+            setTimeout(() => loadExcelFromServer(), 500);
         });
 
-        // 뱃지 상태 업데이트
+        // 상태 뱃지 UI 업데이트
         function updateStatus(text, type = 'waiting') {
             const dot = elements.statusBadge.querySelector('span');
             elements.statusBadge.innerHTML = '';
             elements.statusBadge.appendChild(dot);
             elements.statusBadge.append(` ${text}`);
             
-            // 색상 리셋
             elements.statusBadge.className = 'px-4 py-2 rounded-full text-sm font-medium border flex items-center gap-2 shadow-sm transition-colors';
             
             if (type === 'success') {
@@ -272,6 +293,7 @@
             }
         }
 
+        // 서버에서 엑셀 파일 로딩
         async function loadExcelFromServer() {
             try {
                 const response = await fetch(FILE_NAME);
@@ -281,13 +303,12 @@
             } catch (error) {
                 console.warn(error);
                 updateStatus('로컬 환경 / 파일 없음', 'error');
-                elements.loadingOverlay.style.opacity = '0';
-                setTimeout(() => elements.loadingOverlay.classList.add('hidden'), 500);
+                hideLoading();
                 elements.manualUploadSection.classList.remove('hidden');
             }
         }
 
-        // 수동 업로드
+        // 수동 업로드 (로컬 환경용)
         document.getElementById('excelFileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -299,38 +320,94 @@
             reader.readAsArrayBuffer(file);
         });
 
-        // 엑셀 파싱
+        function hideLoading() {
+            elements.loadingOverlay.style.opacity = '0';
+            setTimeout(() => elements.loadingOverlay.classList.add('hidden'), 500);
+        }
+
+        // 엑셀 데이터 파싱
         function processExcelData(data) {
             try {
                 const workbook = XLSX.read(data, { type: 'array', cellDates: true });
                 const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                 
-                // 날짜 포맷팅을 위한 옵션 적용 (raw: false, dateNF: 'yyyy-mm-dd')
                 globalData = XLSX.utils.sheet_to_json(worksheet, { raw: false, dateNF: 'yyyy-mm-dd' });
 
                 updateStatus('동기화 완료 (Live)', 'success');
+                
+                // 1. 콤보박스 목록 생성
+                populateDropdowns(globalData);
+                
+                // 2. 전체 데이터 테이블 렌더링
                 renderTable(globalData);
+                
                 elements.manualUploadSection.classList.add('hidden');
             } catch (error) {
                 updateStatus('데이터 분석 오류', 'error');
                 alert('엑셀 파일을 읽는 중 오류가 발생했습니다.');
             } finally {
-                elements.loadingOverlay.style.opacity = '0';
-                setTimeout(() => elements.loadingOverlay.classList.add('hidden'), 500);
+                hideLoading();
             }
         }
 
-        // 뱃지 스타일 헬퍼 ('구분' 컬럼용)
+        // ✨ 엑셀 데이터를 기반으로 콤보박스 목록(Option) 자동 생성
+        function populateDropdowns(data) {
+            filterConfig.forEach(config => {
+                const selectElement = document.getElementById(config.id);
+                if (!selectElement) return;
+
+                // 해당 컬럼의 데이터 중 중복을 제거하고 빈 값 제외 후 정렬
+                const uniqueValues = [...new Set(data.map(row => row[config.colName]).filter(val => val !== undefined && val !== null && String(val).trim() !== ''))].sort();
+
+                // 기존 옵션 지우고 '전체' 옵션만 남기기
+                selectElement.innerHTML = '<option value="">전체 (All)</option>';
+
+                // 추출된 고유 값들을 Option 태그로 추가
+                uniqueValues.forEach(value => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = value;
+                    selectElement.appendChild(option);
+                });
+
+                // 선택 값이 변경될 때마다 필터링 함수 실행 (이벤트 리스너 연결)
+                selectElement.addEventListener('change', applyFilters);
+            });
+        }
+
+        // ✨ 다중 조건 필터링 적용 함수
+        function applyFilters() {
+            let filteredData = globalData;
+
+            // 각 콤보박스의 선택값을 확인하여 교집합(AND) 조건으로 필터링
+            filterConfig.forEach(config => {
+                const selectElement = document.getElementById(config.id);
+                const selectedValue = selectElement.value;
+
+                // '전체'가 아닌 특정 값이 선택되었다면
+                if (selectedValue !== "") {
+                    filteredData = filteredData.filter(row => {
+                        return row[config.colName] === selectedValue;
+                    });
+                }
+            });
+
+            // 필터링된 결과로 테이블 다시 그리기
+            renderTable(filteredData);
+        }
+
+        // 뱃지 디자인 유틸리티
         function getBadgeStyle(text) {
             if (!text) return '';
             const t = text.trim();
-            if (t.includes('완료') || t.includes('승인')) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+            if (t.includes('완료') || t.includes('승인') || t.includes('적합')) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
             if (t.includes('진행') || t.includes('검토')) return 'bg-blue-100 text-blue-700 border-blue-200';
-            if (t.includes('반려') || t.includes('보류') || t.includes('취소')) return 'bg-rose-100 text-rose-700 border-rose-200';
+            if (t.includes('반려') || t.includes('보류') || t.includes('취소') || t.includes('부적합')) return 'bg-rose-100 text-rose-700 border-rose-200';
             if (t.includes('예정') || t.includes('대기')) return 'bg-amber-100 text-amber-700 border-amber-200';
             return 'bg-slate-100 text-slate-700 border-slate-200';
         }
 
+        // 테이블 그리기
         function renderTable(data) {
             elements.tableBody.innerHTML = '';
             elements.resultCount.textContent = data.length;
@@ -349,29 +426,26 @@
             data.forEach((row, index) => {
                 const tr = document.createElement('tr');
                 tr.className = `group hover:bg-primary-50/50 transition-colors row-enter border-b border-slate-50 last:border-none`;
-                // 순차적 애니메이션 딜레이 (최대 1초까지만)
-                tr.style.animationDelay = `${Math.min(index * 0.03, 1)}s`;
+                
+                // 행이 많아도 부드럽게 나타나도록 딜레이 최대치 제한
+                tr.style.animationDelay = `${Math.min(index * 0.02, 0.5)}s`;
 
                 columns.forEach(col => {
                     const td = document.createElement('td');
                     const value = row[col] || '-';
                     
                     if (col === '구분' && value !== '-') {
-                        // '구분' 컬럼은 세련된 뱃지로 렌더링
                         const badgeStyle = getBadgeStyle(value);
-                        td.className = 'px-6 py-4 whitespace-nowrap';
-                        td.innerHTML = `<span class="px-2.5 py-1 text-xs font-bold rounded-md border ${badgeStyle}">${value}</span>`;
+                        td.className = 'px-6 py-4 whitespace-nowrap text-center';
+                        td.innerHTML = `<span class="px-2.5 py-1.5 text-xs font-bold rounded-md border shadow-sm ${badgeStyle}">${value}</span>`;
                     } else if (col === '모델명' || col === '프로젝트명') {
-                        // 주요 식별자는 글씨를 진하게
                         td.className = 'px-6 py-4 whitespace-nowrap font-semibold text-slate-800';
                         td.textContent = value;
                     } else if (col === '특이사항') {
-                        // 특이사항은 길 수 있으므로 처리
                         td.className = 'px-6 py-4 text-sm text-slate-600 max-w-xs truncate';
                         td.textContent = value;
-                        if(value !== '-') td.title = value; // 툴팁
+                        if(value !== '-') td.title = value; 
                     } else {
-                        // 기본 텍스트
                         td.className = 'px-6 py-4 whitespace-nowrap text-sm text-slate-600';
                         td.textContent = value;
                     }
@@ -382,37 +456,15 @@
             });
         }
 
-        // 검색 로직
-        function executeSearch() {
-            if (globalData.length === 0) return;
-            const selectedCol = elements.searchColumn.value;
-            const keyword = elements.searchInput.value.trim().toLowerCase();
-
-            if (!keyword) {
-                renderTable(globalData);
-                return;
-            }
-
-            const filtered = globalData.filter(row => {
-                const val = row[selectedCol] ? String(row[selectedCol]).toLowerCase() : '';
-                return val.includes(keyword);
+        // 필터 초기화 버튼 이벤트
+        document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+            filterConfig.forEach(config => {
+                document.getElementById(config.id).value = "";
             });
-            renderTable(filtered);
-        }
-
-        // 이벤트 리스너 세팅
-        document.getElementById('searchBtn').addEventListener('click', executeSearch);
-        elements.searchInput.addEventListener('keypress', e => { if (e.key === 'Enter') executeSearch(); });
-        
-        document.getElementById('resetBtn').addEventListener('click', () => {
-            elements.searchInput.value = '';
-            elements.searchColumn.selectedIndex = 0;
-            renderTable(globalData);
+            renderTable(globalData); // 원본 데이터로 복귀
         });
 
     </script>
 </body>
 </html>
 
-
-```
