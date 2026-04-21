@@ -1,785 +1,418 @@
+```html
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>프리미엄 임직원 역량 대시보드</title>
+    <title>프리미엄 신뢰성 승인 관리</title>
+    
+    <!-- 폰트: 프리텐다드 (최고급 가독성) -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- SheetJS (Excel) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Phosphor Icons (Duotone) -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
+    <!-- SheetJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- 아이콘 라이브러리 (Lucide) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#eef2ff',
-                            100: '#e0e7ff',
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            900: '#312e81',
-                        }
-                    },
-                    animation: {
-                        'blob': 'blob 7s infinite',
-                        'fade-in-up': 'fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-                        'pulse-glow': 'pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    },
-                    keyframes: {
-                        blob: {
-                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
-                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
-                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
-                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
-                        },
-                        fadeInUp: {
-                            '0%': { opacity: '0', transform: 'translateY(20px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' },
-                        },
-                        pulseGlow: {
-                            '0%, 100%': { opacity: '1', boxShadow: '0 0 0 0 rgba(99, 102, 241, 0.4)' },
-                            '50%': { opacity: '.8', boxShadow: '0 0 0 20px rgba(99, 102, 241, 0)' },
-                        }
-                    }
+                    fontFamily: { sans: ['"Pretendard Variable"', 'Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'sans-serif'] },
+                    colors: { primary: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' } }
                 }
             }
         }
     </script>
+
     <style>
-        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-        
-        body {
-            background-color: #f8fafc;
-            overflow-x: hidden;
-        }
-
-        /* Glassmorphism Styles */
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-        }
-
-        /* Custom Scrollbar */
+        /* 커스텀 스크롤바 */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* Drag over effect */
-        .drag-over-active {
-            border-color: #6366f1 !important;
-            background: rgba(99, 102, 241, 0.05) !important;
-            transform: scale(1.02);
+        /* 배경 애니메이션 효과 */
+        .bg-shape {
+            position: fixed; filter: blur(100px); opacity: 0.5; z-index: -1;
+            animation: float 20s infinite ease-in-out alternate;
+        }
+        .shape-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(59,130,246,0.3) 0%, rgba(255,255,255,0) 70%); }
+        .shape-2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(139,92,246,0.2) 0%, rgba(255,255,255,0) 70%); animation-delay: -10s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(5%, 5%) scale(1.1); }
         }
 
-        /* Table specific styles */
-        th.sortable { cursor: pointer; transition: all 0.2s; }
-        th.sortable:hover { background-color: rgba(0,0,0,0.02); }
-        .row-enter { animation: fadeInUp 0.4s ease forwards; opacity: 0; }
+        /* UI 등장 애니메이션 */
+        .fade-in-up {
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0; transform: translateY(20px);
+        }
         
-        /* Staggered delays */
-        .delay-100 { animation-delay: 100ms; }
-        .delay-200 { animation-delay: 200ms; }
-        .delay-300 { animation-delay: 300ms; }
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 테이블 로우 순차적 등장 애니메이션 */
+        .row-enter {
+            animation: rowFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0; transform: translateY(10px);
+        }
+        
+        @keyframes rowFadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 글래스모피즘 & 카드 스타일 */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0,0,0,0.02);
+        }
+
+        /* 그라데이션 텍스트 */
+        .text-gradient {
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* 로딩 스피너 */
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid rgba(59, 130, 246, 0.1);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="text-gray-800 antialiased min-h-screen relative">
+<body class="bg-[#f8fafc] text-slate-800 min-h-screen relative overflow-x-hidden antialiased">
 
-    <!-- Ambient Background Blobs -->
-    <div class="fixed top-[-10%] left-[-10%] w-96 h-96 rounded-full bg-purple-300 mix-blend-multiply filter blur-[100px] opacity-40 animate-blob z-0 pointer-events-none"></div>
-    <div class="fixed top-[20%] right-[-10%] w-96 h-96 rounded-full bg-brand-300 mix-blend-multiply filter blur-[100px] opacity-40 animate-blob animation-delay-2000 z-0 pointer-events-none" style="animation-delay: 2s;"></div>
-    <div class="fixed bottom-[-20%] left-[20%] w-96 h-96 rounded-full bg-pink-300 mix-blend-multiply filter blur-[100px] opacity-40 animate-blob animation-delay-4000 z-0 pointer-events-none" style="animation-delay: 4s;"></div>
+    <!-- 감각적인 배경 요소 -->
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
 
-    <!-- ==========================================
-         SCREEN 1: Upload (Center Hero)
-    =========================================== -->
-    <div id="screen-upload" class="relative z-10 min-h-screen flex flex-col items-center justify-center p-4 transition-opacity duration-700">
-        <div class="text-center mb-10 animate-fade-in-up">
-            <div class="inline-flex items-center justify-center p-3 bg-brand-100 rounded-2xl mb-4 shadow-sm">
-                <i class="ph-duotone ph-sparkle text-3xl text-brand-600"></i>
-            </div>
-            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">
-                조직 역량을 <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-purple-600">한눈에</span>
-            </h1>
-            <p class="text-lg text-gray-500 max-w-xl mx-auto">엑셀 데이터를 업로드하고, AI 기반의 유려한 시각화 대시보드로<br/>부서별/직급별 인사이트를 즉시 도출하세요.</p>
-        </div>
-
-        <div class="w-full max-w-2xl animate-fade-in-up delay-100">
-            <div id="main-drop-zone" class="glass-panel rounded-3xl p-10 border-2 border-dashed border-brand-300 hover:border-brand-500 transition-all duration-300 text-center cursor-pointer relative overflow-hidden group shadow-xl">
-                <input type="file" id="main-file-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" accept=".xlsx, .xls, .csv">
-                
-                <div class="relative z-10 flex flex-col items-center justify-center gap-4 transition-transform group-hover:scale-105 duration-500">
-                    <div class="w-20 h-20 bg-white rounded-full shadow-md flex items-center justify-center animate-pulse-glow">
-                        <i class="ph-duotone ph-microsoft-excel-logo text-4xl text-green-600"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-bold text-gray-800">여기로 파일을 드래그 하세요</h3>
-                        <p class="text-sm text-gray-500 mt-2">또는 클릭하여 내 PC에서 파일 선택</p>
-                    </div>
-                    <div class="flex gap-2 mt-2">
-                        <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">번호</span>
-                        <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">부서</span>
-                        <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">직급</span>
-                        <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">OPIC등급</span>
-                        <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">자격증</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="mt-8 text-center">
-                <button id="btn-demo" class="text-sm text-brand-600 font-semibold hover:text-brand-800 transition-colors flex items-center justify-center gap-2 mx-auto px-4 py-2 rounded-full hover:bg-brand-50">
-                    <i class="ph-duotone ph-magic-wand"></i> 준비된 데이터가 없나요? 더미 데이터로 시작하기
-                </button>
-            </div>
-        </div>
+    <!-- 전체 로딩 오버레이 -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="spinner mb-4"></div>
+        <p class="text-slate-600 font-medium animate-pulse">데이터를 동기화하고 있습니다...</p>
     </div>
 
-
-    <!-- ==========================================
-         SCREEN 2: Dashboard
-    =========================================== -->
-    <div id="screen-dashboard" class="hidden relative z-10 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10 opacity-0 transition-opacity duration-700">
+    <main class="max-w-[1400px] mx-auto p-4 md:p-8 lg:p-12 relative z-10 flex flex-col gap-8 min-h-screen">
         
-        <!-- Header -->
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 animate-fade-in-up">
+        <!-- 헤더 영역 -->
+        <header class="fade-in-up flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
-                <div class="flex items-center gap-3 mb-1">
-                    <div class="p-2 bg-gradient-to-br from-brand-500 to-purple-600 rounded-lg shadow-lg">
-                        <i class="ph-bold ph-chart-polar text-white text-xl"></i>
-                    </div>
-                    <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">임직원 역량 현황</h1>
+                <div class="flex items-center gap-2 mb-2 text-primary-600 font-semibold tracking-wide text-sm">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i>
+                    <span>RELIABILITY APPROVAL SYSTEM</span>
                 </div>
-                <p class="text-gray-500 text-sm ml-12">OPIC 성적 및 직무 자격증 통합 분석</p>
+                <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">
+                    모델별 <span class="text-gradient">신뢰성 승인</span> 관리
+                </h1>
             </div>
-
-            <!-- 미니 업로더 -->
-            <div class="relative group">
-                <button class="glass-panel px-5 py-2.5 rounded-full text-sm font-semibold text-gray-700 hover:text-brand-600 hover:border-brand-300 transition-all flex items-center gap-2 shadow-sm">
-                    <i class="ph-duotone ph-arrows-clockwise text-lg"></i> 데이터 재업로드
-                </button>
-                <input type="file" id="mini-file-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".xlsx, .xls, .csv">
+            
+            <div id="statusBadge" class="px-4 py-2 rounded-full bg-slate-100 text-slate-600 text-sm font-medium border border-slate-200 flex items-center gap-2 shadow-sm">
+                <span class="relative flex h-2.5 w-2.5">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary-500"></span>
+                </span>
+                데이터 로드 대기중
             </div>
         </header>
 
-        <!-- 필터 영역 -->
-        <div class="glass-panel rounded-2xl p-4 mb-8 flex flex-wrap gap-4 items-center justify-between animate-fade-in-up delay-100">
-            <div class="flex flex-wrap items-center gap-4 w-full md:w-auto">
-                <div class="flex items-center gap-2 pl-2">
-                    <i class="ph-duotone ph-faders text-brand-500 text-xl"></i>
-                    <span class="font-bold text-gray-700 text-sm">필터링</span>
+        <!-- 수동 업로드 (에러 시에만 표시됨) -->
+        <div id="manualUploadSection" class="hidden glass-card rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 fade-in-up" style="animation-delay: 0.1s;">
+            <div class="flex items-center gap-3 text-amber-600">
+                <div class="p-2 bg-amber-100 rounded-full"><i data-lucide="alert-circle" class="w-5 h-5"></i></div>
+                <div>
+                    <h3 class="font-bold text-slate-800">로컬 환경 감지됨</h3>
+                    <p class="text-sm text-slate-500">서버에서 파일을 찾을 수 없습니다. 아래 버튼으로 엑셀 파일을 직접 업로드해주세요.</p>
                 </div>
-                <div class="h-6 w-px bg-gray-300 hidden md:block"></div>
-                <select id="filter-dept" class="bg-white/50 border border-white/50 text-gray-700 text-sm rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 block w-40 p-2.5 outline-none transition shadow-sm backdrop-blur-md">
-                    <option value="All">모든 부서</option>
+            </div>
+            <label class="cursor-pointer bg-white border border-slate-200 hover:border-primary-500 hover:bg-primary-50 text-slate-700 px-6 py-3 rounded-xl transition-all font-medium flex items-center gap-2 shadow-sm">
+                <i data-lucide="upload" class="w-4 h-4"></i>
+                엑셀 파일 선택
+                <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="hidden" />
+            </label>
+        </div>
+
+        <!-- 검색 및 필터 컨트롤 -->
+        <div class="glass-card rounded-2xl p-2 pl-4 fade-in-up flex flex-col md:flex-row gap-2 items-center" style="animation-delay: 0.2s;">
+            
+            <div class="flex items-center gap-2 w-full md:w-auto border-b md:border-b-0 md:border-r border-slate-200 pb-2 md:pb-0 md:pr-4">
+                <i data-lucide="filter" class="w-4 h-4 text-slate-400"></i>
+                <select id="searchColumn" class="bg-transparent text-slate-700 font-medium focus:outline-none w-full md:w-32 py-2 cursor-pointer">
+                    <option value="모델명">모델명</option>
+                    <option value="마케팅명">마케팅명</option>
+                    <option value="프로젝트명">프로젝트명</option>
+                    <option value="협력사">협력사</option>
+                    <option value="구분">구분</option>
                 </select>
-                <select id="filter-rank" class="bg-white/50 border border-white/50 text-gray-700 text-sm rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 block w-40 p-2.5 outline-none transition shadow-sm backdrop-blur-md">
-                    <option value="All">모든 직급</option>
-                </select>
-            </div>
-            <button id="reset-filters" class="text-sm font-medium text-gray-500 hover:text-brand-600 transition px-3 py-1.5 rounded-lg hover:bg-gray-100/50">초기화</button>
-        </div>
-
-        <!-- KPI 요약 카드 -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 animate-fade-in-up delay-200">
-            <!-- KPI 1 -->
-            <div class="glass-panel rounded-3xl p-6 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-blue-500/10 blur-2xl group-hover:bg-blue-500/20 transition-all duration-500"></div>
-                <div class="flex items-center justify-between relative z-10">
-                    <div>
-                        <p class="text-sm font-semibold text-gray-500 mb-1">분석 대상 총 인원</p>
-                        <p class="text-4xl font-extrabold text-gray-900 tracking-tight" id="kpi-total">0</p>
-                    </div>
-                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center shadow-inner border border-blue-200/50">
-                        <i class="ph-duotone ph-users-three text-blue-600 text-3xl"></i>
-                    </div>
-                </div>
             </div>
 
-            <!-- KPI 2 -->
-            <div class="glass-panel rounded-3xl p-6 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-emerald-500/10 blur-2xl group-hover:bg-emerald-500/20 transition-all duration-500"></div>
-                <div class="flex items-center justify-between relative z-10">
-                    <div>
-                        <p class="text-sm font-semibold text-gray-500 mb-1">자격증 1개 이상 보유율</p>
-                        <div class="flex items-baseline gap-1">
-                            <p class="text-4xl font-extrabold text-gray-900 tracking-tight" id="kpi-cert">0</p>
-                            <span class="text-xl font-bold text-gray-500">%</span>
-                        </div>
-                    </div>
-                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center shadow-inner border border-emerald-200/50">
-                        <i class="ph-duotone ph-certificate text-emerald-600 text-3xl"></i>
-                    </div>
-                </div>
+            <div class="flex-1 flex items-center w-full px-2">
+                <i data-lucide="search" class="w-5 h-5 text-slate-400 mr-2"></i>
+                <input type="text" id="searchInput" placeholder="검색어를 입력하고 Enter를 누르세요..." class="w-full bg-transparent border-none focus:ring-0 text-slate-800 placeholder-slate-400 py-3 text-lg focus:outline-none">
             </div>
 
-            <!-- KPI 3 -->
-            <div class="glass-panel rounded-3xl p-6 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-purple-500/10 blur-2xl group-hover:bg-purple-500/20 transition-all duration-500"></div>
-                <div class="flex items-center justify-between relative z-10">
-                    <div>
-                        <p class="text-sm font-semibold text-gray-500 mb-1">어학 우수자 (AL/IH) 비율</p>
-                        <div class="flex items-baseline gap-1">
-                            <p class="text-4xl font-extrabold text-gray-900 tracking-tight" id="kpi-opic">0</p>
-                            <span class="text-xl font-bold text-gray-500">%</span>
-                        </div>
-                    </div>
-                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center shadow-inner border border-purple-200/50">
-                        <i class="ph-duotone ph-globe-hemisphere-east text-purple-600 text-3xl"></i>
-                    </div>
-                </div>
+            <div class="flex gap-2 w-full md:w-auto mt-2 md:mt-0 p-2 md:p-0">
+                <button id="resetBtn" class="px-5 py-3 rounded-xl text-slate-600 hover:bg-slate-100 font-medium transition-colors flex items-center gap-2 w-full md:w-auto justify-center">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i> 초기화
+                </button>
+                <button id="searchBtn" class="px-8 py-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-medium shadow-lg shadow-primary-500/30 transition-all hover:shadow-primary-500/50 hover:-translate-y-0.5 flex items-center gap-2 w-full md:w-auto justify-center">
+                    검색
+                </button>
             </div>
         </div>
 
-        <!-- Middle Area: 차트 분석 -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 animate-fade-in-up delay-300">
-            <!-- Chart 1: OPIC 분포 -->
-            <div class="glass-panel rounded-3xl p-7 flex flex-col">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        <span class="w-2 h-6 rounded-full bg-blue-500 block"></span>
-                        전사 OPIC 등급 분포
-                    </h3>
-                </div>
-                <div class="relative flex-1 min-h-[320px] w-full">
-                    <canvas id="chart-opic"></canvas>
-                </div>
-            </div>
-
-            <!-- Chart 2: 부서별 자격증 보유 현황 -->
-            <div class="glass-panel rounded-3xl p-7 flex flex-col">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        <span class="w-2 h-6 rounded-full bg-emerald-500 block"></span>
-                        부서별 주요 자격증 현황 (Top 5)
-                    </h3>
-                </div>
-                <div class="relative flex-1 min-h-[320px] w-full">
-                    <canvas id="chart-cert"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bottom Area: 상세 데이터 그리드 -->
-        <div class="glass-panel rounded-3xl overflow-hidden animate-fade-in-up delay-300 shadow-xl border border-white/60">
-            <div class="p-6 border-b border-gray-200/50 bg-white/40 flex flex-col md:flex-row justify-between items-center gap-4">
-                <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    <div class="p-1.5 bg-white rounded-lg shadow-sm">
-                        <i class="ph-duotone ph-table text-brand-600 text-lg"></i>
-                    </div>
-                    상세 데이터 원본
-                </h3>
-                <div class="flex items-center gap-3 w-full md:w-auto">
-                    <div class="relative flex-1 md:w-72">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <i class="ph-bold ph-magnifying-glass text-gray-400"></i>
-                        </div>
-                        <input type="text" id="search-input" class="bg-white/60 border border-white text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 block w-full pl-11 py-2.5 outline-none transition shadow-sm backdrop-blur-md placeholder-gray-400" placeholder="이름, 사번, 자격증 검색...">
-                    </div>
-                    <button id="btn-export" class="bg-gray-900 hover:bg-brand-600 text-white font-semibold rounded-xl text-sm px-5 py-2.5 flex items-center gap-2 transition-colors shadow-md">
-                        <i class="ph-bold ph-download-simple"></i> Excel 내보내기
+        <!-- 데이터 테이블 카드 -->
+        <div class="glass-card rounded-3xl overflow-hidden flex-1 flex flex-col fade-in-up" style="animation-delay: 0.3s;">
+            
+            <!-- 상단 요약 바 -->
+            <div class="px-6 py-4 bg-white/50 border-b border-slate-100 flex justify-between items-center">
+                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    승인 데이터 목록
+                    <span id="resultCount" class="bg-primary-100 text-primary-700 py-0.5 px-2.5 rounded-full text-xs font-bold">0</span>
+                </h2>
+                <div class="flex gap-2">
+                    <button class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="새로고침" onclick="location.reload()">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                     </button>
                 </div>
             </div>
-            
+
             <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left text-gray-600">
-                    <thead class="text-xs text-gray-500 uppercase bg-gray-50/50">
-                        <tr>
-                            <th scope="col" class="px-6 py-4 sortable group select-none" data-sort="번호">
-                                <div class="flex items-center gap-1">사번/연번 <i class="ph-bold ph-caret-up-down text-gray-300 group-hover:text-gray-500"></i></div>
-                            </th>
-                            <th scope="col" class="px-6 py-4 sortable group select-none" data-sort="부서">
-                                <div class="flex items-center gap-1">부서 <i class="ph-bold ph-caret-up-down text-gray-300 group-hover:text-gray-500"></i></div>
-                            </th>
-                            <th scope="col" class="px-6 py-4 sortable group select-none" data-sort="직급">
-                                <div class="flex items-center gap-1">직급 <i class="ph-bold ph-caret-up-down text-gray-300 group-hover:text-gray-500"></i></div>
-                            </th>
-                            <th scope="col" class="px-6 py-4 sortable group select-none" data-sort="OPIC등급">
-                                <div class="flex items-center gap-1">OPIC <i class="ph-bold ph-caret-up-down text-gray-300 group-hover:text-gray-500"></i></div>
-                            </th>
-                            <th scope="col" class="px-6 py-4">보유 자격증</th>
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/80 backdrop-blur-md border-b border-slate-200">
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">협력사</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">모델명</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">마케팅명</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">프로젝트명</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">구분</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">승인일</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">특이사항</th>
                         </tr>
                     </thead>
-                    <tbody id="table-body" class="divide-y divide-gray-100/50 bg-white/20">
-                        <!-- rows rendered by JS -->
+                    <tbody id="tableBody" class="divide-y divide-slate-100 bg-white/40">
+                        <!-- 데이터 렌더링 영역 -->
                     </tbody>
                 </table>
             </div>
-            <!-- Empty State -->
-            <div id="table-empty" class="hidden p-16 text-center text-gray-500">
-                <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="ph-duotone ph-ghost text-4xl text-gray-400"></i>
+
+            <!-- 데이터 없음 상태 UI -->
+            <div id="noDataMessage" class="hidden flex-col items-center justify-center py-20 px-4 text-center">
+                <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400">
+                    <i data-lucide="inbox" class="w-10 h-10"></i>
                 </div>
-                <p class="text-lg font-medium text-gray-600">검색된 데이터가 없습니다.</p>
-                <p class="text-sm mt-1 text-gray-400">필터나 검색어를 변경해 보세요.</p>
+                <h3 class="text-xl font-bold text-slate-700 mb-2">표시할 데이터가 없습니다</h3>
+                <p class="text-slate-500 max-w-md">엑셀 파일이 비어있거나 검색 조건에 맞는 결과가 없습니다. 검색어를 변경해보세요.</p>
             </div>
         </div>
         
-        <!-- Footer -->
-        <div class="mt-8 text-center text-xs text-gray-400">
-            Powered by HTML5, TailwindCSS, Chart.js, and SheetJS. Designed for Premium UX.
-        </div>
-    </div>
+        <footer class="text-center text-slate-400 text-sm mt-4 fade-in-up" style="animation-delay: 0.4s;">
+            &copy; Reliability Approval Dashboard. Automatically synced with Excel data.
+        </footer>
+    </main>
 
-    <!-- 스크립트: 로직 처리 -->
     <script>
-        // 전역 상태
-        let rawData = [];
-        let filteredData = [];
-        let charts = { opic: null, cert: null };
-        let sortState = { column: '번호', direction: 'asc' };
+        // Lucide 아이콘 초기화
+        lucide.createIcons();
 
-        // -------------------------------------------------------------
-        // 1. 화면 전환 로직 (Upload <-> Dashboard)
-        // -------------------------------------------------------------
-        const showDashboard = () => {
-            const uploadScreen = document.getElementById('screen-upload');
-            const dashboardScreen = document.getElementById('screen-dashboard');
-            
-            // Fade out upload
-            uploadScreen.style.opacity = '0';
-            setTimeout(() => {
-                uploadScreen.classList.add('hidden');
-                
-                // Show and fade in dashboard
-                dashboardScreen.classList.remove('hidden');
-                // Trigger reflow
-                void dashboardScreen.offsetWidth;
-                dashboardScreen.style.opacity = '1';
-                
-                initDashboard();
-            }, 500); // match duration-700 mostly
+        let globalData = [];
+        const FILE_NAME = './모델별 신뢰성 승인 관리.xlsx';
+        const columns = ['협력사', '모델명', '마케팅명', '프로젝트명', '구분', '승인일', '특이사항'];
+
+        const elements = {
+            loadingOverlay: document.getElementById('loadingOverlay'),
+            statusBadge: document.getElementById('statusBadge'),
+            manualUploadSection: document.getElementById('manualUploadSection'),
+            tableBody: document.getElementById('tableBody'),
+            noDataMessage: document.getElementById('noDataMessage'),
+            searchInput: document.getElementById('searchInput'),
+            searchColumn: document.getElementById('searchColumn'),
+            resultCount: document.getElementById('resultCount')
         };
 
-        // -------------------------------------------------------------
-        // 2. 초기 더미 데이터 세팅
-        // -------------------------------------------------------------
-        const generateDummyData = () => {
-            const depts = ['프론트엔드팀', '백엔드팀', 'AI연구소', '프로덕트디자인팀', '사업기획팀', '인사총무팀'];
-            const ranks = ['주니어', '미들', '시니어', '리드', '본부장'];
-            const opics = ['AL', 'IH', 'IM', 'IL', 'NH', '없음'];
-            const certs = ['정보처리기사', 'SQLD', 'PMP', 'ADsP', 'AWS SAA', 'CKA', '없음'];
-            
-            const data = [];
-            for (let i = 1; i <= 200; i++) {
-                const hasCert = Math.random() > 0.2; // 80% have certs
-                let userCerts = '없음';
-                if (hasCert) {
-                    const c1 = certs[Math.floor(Math.random() * (certs.length - 1))];
-                    const c2 = Math.random() > 0.6 ? ', ' + certs[Math.floor(Math.random() * (certs.length - 1))] : '';
-                    const c3 = Math.random() > 0.9 ? ', ' + certs[Math.floor(Math.random() * (certs.length - 1))] : '';
-                    // Remove duplicates
-                    userCerts = [...new Set((c1 + c2 + c3).split(', '))].join(', ');
-                }
-
-                data.push({
-                    '번호': `EMP-${String(i).padStart(4, '0')}`,
-                    '부서': depts[Math.floor(Math.random() * depts.length)],
-                    '직급': ranks[Math.floor(Math.random() * ranks.length)],
-                    'OPIC등급': opics[Math.floor(Math.random() * opics.length)],
-                    '자격증': userCerts
-                });
-            }
-            return data;
-        };
-
-        // -------------------------------------------------------------
-        // 3. 초기화 및 이벤트 리스너 등록
-        // -------------------------------------------------------------
-        document.addEventListener('DOMContentLoaded', () => {
-            setupEventListeners();
-            
-            // Chart.js 글로벌 설정 (고급스러운 폰트, 컬러)
-            Chart.defaults.font.family = "'Pretendard', sans-serif";
-            Chart.defaults.color = '#64748b';
-            Chart.defaults.scale.grid.color = 'rgba(0,0,0,0.04)';
+        // 초기 로드
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => loadExcelFromServer(), 500); // 부드러운 애니메이션을 위해 0.5초 대기
         });
 
-        const setupEventListeners = () => {
-            // 더미 데이터 시작 버튼
-            document.getElementById('btn-demo').addEventListener('click', () => {
-                rawData = generateDummyData();
-                showDashboard();
-            });
-
-            // 필터 이벤트
-            document.getElementById('filter-dept').addEventListener('change', applyFilters);
-            document.getElementById('filter-rank').addEventListener('change', applyFilters);
-            document.getElementById('search-input').addEventListener('input', applyFilters);
-            document.getElementById('reset-filters').addEventListener('click', () => {
-                document.getElementById('filter-dept').value = 'All';
-                document.getElementById('filter-rank').value = 'All';
-                document.getElementById('search-input').value = '';
-                applyFilters();
-            });
-
-            // 정렬 이벤트
-            document.querySelectorAll('th.sortable').forEach(th => {
-                th.addEventListener('click', () => {
-                    const col = th.getAttribute('data-sort');
-                    if (sortState.column === col) {
-                        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
-                    } else {
-                        sortState.column = col;
-                        sortState.direction = 'asc';
-                    }
-                    renderTable();
-                });
-            });
-
-            // 파일 업로드 이벤트 (메인 및 미니)
-            const mainDropZone = document.getElementById('main-drop-zone');
-            const mainFileInput = document.getElementById('main-file-upload');
-            const miniFileInput = document.getElementById('mini-file-upload');
-
-            const handleDragOver = (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over-active'); };
-            const handleDragLeave = (e) => { e.preventDefault(); e.currentTarget.classList.remove('drag-over-active'); };
-            const handleDrop = (e, inputElement) => {
-                e.preventDefault();
-                e.currentTarget.classList.remove('drag-over-active');
-                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                    inputElement.files = e.dataTransfer.files;
-                    processFile(inputElement.files[0]);
-                }
-            };
-
-            mainFileInput.addEventListener('change', (e) => processFile(e.target.files[0]));
-            miniFileInput.addEventListener('change', (e) => processFile(e.target.files[0]));
+        // 뱃지 상태 업데이트
+        function updateStatus(text, type = 'waiting') {
+            const dot = elements.statusBadge.querySelector('span');
+            elements.statusBadge.innerHTML = '';
+            elements.statusBadge.appendChild(dot);
+            elements.statusBadge.append(` ${text}`);
             
-            mainDropZone.addEventListener('dragover', handleDragOver);
-            mainDropZone.addEventListener('dragleave', handleDragLeave);
-            mainDropZone.addEventListener('drop', (e) => handleDrop(e, mainFileInput));
+            // 색상 리셋
+            elements.statusBadge.className = 'px-4 py-2 rounded-full text-sm font-medium border flex items-center gap-2 shadow-sm transition-colors';
+            
+            if (type === 'success') {
+                elements.statusBadge.classList.add('bg-emerald-50', 'text-emerald-700', 'border-emerald-200');
+                dot.innerHTML = `<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>`;
+            } else if (type === 'error') {
+                elements.statusBadge.classList.add('bg-rose-50', 'text-rose-700', 'border-rose-200');
+                dot.innerHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>`;
+            } else {
+                elements.statusBadge.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-200');
+                dot.innerHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-slate-500"></span>`;
+            }
+        }
 
-            // 엑셀 다운로드 이벤트
-            document.getElementById('btn-export').addEventListener('click', exportToExcel);
-        };
+        async function loadExcelFromServer() {
+            try {
+                const response = await fetch(FILE_NAME);
+                if (!response.ok) throw new Error('파일 없음');
+                const arrayBuffer = await response.arrayBuffer();
+                processExcelData(arrayBuffer);
+            } catch (error) {
+                console.warn(error);
+                updateStatus('로컬 환경 / 파일 없음', 'error');
+                elements.loadingOverlay.style.opacity = '0';
+                setTimeout(() => elements.loadingOverlay.classList.add('hidden'), 500);
+                elements.manualUploadSection.classList.remove('hidden');
+            }
+        }
 
-        // -------------------------------------------------------------
-        // 4. 엑셀 파싱 로직 (SheetJS)
-        // -------------------------------------------------------------
-        const processFile = (file) => {
+        // 수동 업로드
+        document.getElementById('excelFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
             if (!file) return;
-
+            elements.loadingOverlay.classList.remove('hidden');
+            setTimeout(() => elements.loadingOverlay.style.opacity = '1', 10);
+            
             const reader = new FileReader();
-            reader.onload = (evt) => {
-                try {
-                    const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    
-                    const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-                    
-                    const requiredColumns = ['번호', '부서', '직급', 'OPIC등급', '자격증'];
-                    const firstRow = json[0] || {};
-                    const missingColumns = requiredColumns.filter(col => !(col in firstRow));
-
-                    if (missingColumns.length > 0) {
-                        alert(`엑셀 구조가 맞지 않습니다.\n다음 필수 컬럼이 필요합니다:\n${missingColumns.join(', ')}`);
-                        return;
-                    }
-
-                    rawData = json;
-                    
-                    // 필터 초기화
-                    if(document.getElementById('filter-dept')) document.getElementById('filter-dept').value = 'All';
-                    if(document.getElementById('filter-rank')) document.getElementById('filter-rank').value = 'All';
-                    if(document.getElementById('search-input')) document.getElementById('search-input').value = '';
-                    
-                    if(document.getElementById('screen-dashboard').classList.contains('hidden')){
-                        showDashboard();
-                    } else {
-                        initDashboard(); // 이미 대시보드 화면이면 리프레시
-                    }
-
-                } catch (error) {
-                    alert('파일을 읽는 중 오류가 발생했습니다. 올바른 엑셀 파일인지 확인해주세요.');
-                    console.error(error);
-                }
-            };
+            reader.onload = e => processExcelData(new Uint8Array(e.target.result));
             reader.readAsArrayBuffer(file);
-        };
+        });
 
-        // -------------------------------------------------------------
-        // 5. 코어 렌더링 파이프라인
-        // -------------------------------------------------------------
-        const initDashboard = () => {
-            populateDropdowns();
-            applyFilters();
-        };
-
-        const populateDropdowns = () => {
-            const depts = [...new Set(rawData.map(d => String(d.부서 || '미분류').trim()))].sort();
-            const ranks = [...new Set(rawData.map(d => String(d.직급 || '미분류').trim()))].sort();
-
-            const deptSelect = document.getElementById('filter-dept');
-            const rankSelect = document.getElementById('filter-rank');
-
-            deptSelect.innerHTML = '<option value="All">모든 부서</option>' + depts.map(d => `<option value="${d}">${d}</option>`).join('');
-            rankSelect.innerHTML = '<option value="All">모든 직급</option>' + ranks.map(r => `<option value="${r}">${r}</option>`).join('');
-        };
-
-        const applyFilters = () => {
-            const deptFilter = document.getElementById('filter-dept').value;
-            const rankFilter = document.getElementById('filter-rank').value;
-            const searchTerm = document.getElementById('search-input').value.toLowerCase();
-
-            filteredData = rawData.filter(d => {
-                const matchDept = deptFilter === 'All' || d.부서 === deptFilter;
-                const matchRank = rankFilter === 'All' || d.직급 === rankFilter;
-                const matchSearch = Object.values(d).some(val => String(val).toLowerCase().includes(searchTerm));
+        // 엑셀 파싱
+        function processExcelData(data) {
+            try {
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                 
-                return matchDept && matchRank && matchSearch;
-            });
+                // 날짜 포맷팅을 위한 옵션 적용 (raw: false, dateNF: 'yyyy-mm-dd')
+                globalData = XLSX.utils.sheet_to_json(worksheet, { raw: false, dateNF: 'yyyy-mm-dd' });
 
-            updateKPIs();
-            renderCharts();
-            renderTable();
-        };
+                updateStatus('동기화 완료 (Live)', 'success');
+                renderTable(globalData);
+                elements.manualUploadSection.classList.add('hidden');
+            } catch (error) {
+                updateStatus('데이터 분석 오류', 'error');
+                alert('엑셀 파일을 읽는 중 오류가 발생했습니다.');
+            } finally {
+                elements.loadingOverlay.style.opacity = '0';
+                setTimeout(() => elements.loadingOverlay.classList.add('hidden'), 500);
+            }
+        }
 
-        // -------------------------------------------------------------
-        // 6. UI 업데이트 로직 (KPI, 차트, 테이블)
-        // -------------------------------------------------------------
-        const updateKPIs = () => {
-            const total = filteredData.length;
-            let certCount = 0;
-            let highOpicCount = 0;
+        // 뱃지 스타일 헬퍼 ('구분' 컬럼용)
+        function getBadgeStyle(text) {
+            if (!text) return '';
+            const t = text.trim();
+            if (t.includes('완료') || t.includes('승인')) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+            if (t.includes('진행') || t.includes('검토')) return 'bg-blue-100 text-blue-700 border-blue-200';
+            if (t.includes('반려') || t.includes('보류') || t.includes('취소')) return 'bg-rose-100 text-rose-700 border-rose-200';
+            if (t.includes('예정') || t.includes('대기')) return 'bg-amber-100 text-amber-700 border-amber-200';
+            return 'bg-slate-100 text-slate-700 border-slate-200';
+        }
 
-            filteredData.forEach(d => {
-                const cert = String(d.자격증 || '').trim();
-                if (cert && cert !== '없음' && cert !== '-') certCount++;
+        function renderTable(data) {
+            elements.tableBody.innerHTML = '';
+            elements.resultCount.textContent = data.length;
 
-                const opic = String(d.OPIC등급 || '').trim().toUpperCase();
-                if (opic === 'AL' || opic === 'IH') highOpicCount++;
-            });
-
-            const certRate = total > 0 ? ((certCount / total) * 100).toFixed(1) : 0;
-            const opicRate = total > 0 ? ((highOpicCount / total) * 100).toFixed(1) : 0;
-
-            // Animate Numbers (간단한 카운트업 효과 가능하나 DOM 업데이트로 대체)
-            document.getElementById('kpi-total').textContent = total.toLocaleString();
-            document.getElementById('kpi-cert').textContent = certRate;
-            document.getElementById('kpi-opic').textContent = opicRate;
-        };
-
-        const createGradient = (ctx, colorStart, colorEnd) => {
-            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, colorStart);
-            gradient.addColorStop(1, colorEnd);
-            return gradient;
-        };
-
-        const renderCharts = () => {
-            renderOpicChart();
-            renderCertChart();
-        };
-
-        const renderOpicChart = () => {
-            const canvas = document.getElementById('chart-opic');
-            const ctx = canvas.getContext('2d');
-            if (charts.opic) charts.opic.destroy();
-
-            const opicOrder = ['AL', 'IH', 'IM', 'IL', 'NH', '없음'];
-            const counts = { AL: 0, IH: 0, IM: 0, IL: 0, NH: 0, '없음': 0 };
-
-            filteredData.forEach(d => {
-                let grade = String(d.OPIC등급 || '').trim().toUpperCase();
-                if(grade.startsWith('IM')) grade = 'IM'; 
-                if (counts[grade] !== undefined) counts[grade]++;
-                else counts['없음']++;
-            });
-
-            const data = opicOrder.map(grade => counts[grade]);
-            
-            // 고급스러운 그라데이션 컬러 적용
-            const gradients = [
-                createGradient(ctx, '#6366f1', '#4f46e5'), // AL: Indigo
-                createGradient(ctx, '#10b981', '#059669'), // IH: Emerald
-                createGradient(ctx, '#f59e0b', '#d97706'), // IM: Amber
-                createGradient(ctx, '#f97316', '#ea580c'), // IL: Orange
-                createGradient(ctx, '#ef4444', '#dc2626'), // NH: Red
-                createGradient(ctx, '#94a3b8', '#64748b'), // 없음: Slate
-            ];
-
-            charts.opic = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: opicOrder,
-                    datasets: [{
-                        label: '인원 수',
-                        data: data,
-                        backgroundColor: gradients,
-                        borderRadius: 8,
-                        borderSkipped: false,
-                        barPercentage: 0.6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { padding: 12, cornerRadius: 8 } },
-                    scales: {
-                        x: { grid: { display: false }, border: { display: false } },
-                        y: { beginAtZero: true, border: { display: false }, ticks: { stepSize: 1 } }
-                    },
-                    animation: {
-                        duration: 1000,
-                        easing: 'easeOutQuart'
-                    }
-                }
-            });
-        };
-
-        const renderCertChart = () => {
-            const ctx = document.getElementById('chart-cert').getContext('2d');
-            if (charts.cert) charts.cert.destroy();
-
-            let allCerts = [];
-            filteredData.forEach(d => {
-                const certs = String(d.자격증 || '').split(',').map(c => c.trim()).filter(c => c && c !== '없음' && c !== '-');
-                allCerts.push(...certs);
-            });
-
-            const certCounts = {};
-            allCerts.forEach(c => certCounts[c] = (certCounts[c] || 0) + 1);
-            
-            const sortedCerts = Object.keys(certCounts).sort((a, b) => certCounts[b] - certCounts[a]);
-            const topCerts = sortedCerts.slice(0, 5);
-            const depts = [...new Set(filteredData.map(d => String(d.부서 || '미분류').trim()))].sort();
-            
-            const datasetsMap = {};
-            topCerts.forEach(cert => datasetsMap[cert] = new Array(depts.length).fill(0));
-            datasetsMap['기타'] = new Array(depts.length).fill(0);
-
-            filteredData.forEach(d => {
-                const deptIndex = depts.indexOf(String(d.부서 || '미분류').trim());
-                if(deptIndex === -1) return;
-
-                const certs = String(d.자격증 || '').split(',').map(c => c.trim()).filter(c => c && c !== '없음' && c !== '-');
-                certs.forEach(c => {
-                    if (topCerts.includes(c)) datasetsMap[c][deptIndex]++;
-                    else datasetsMap['기타'][deptIndex]++;
-                });
-            });
-
-            if(topCerts.length === 0) {
-                 charts.cert = new Chart(ctx, { type: 'bar', data: { labels: ['데이터 없음'], datasets: [] }, options: { maintainAspectRatio: false } });
+            if (data.length === 0) {
+                elements.tableBody.parentElement.classList.add('hidden');
+                elements.noDataMessage.classList.remove('hidden');
+                elements.noDataMessage.classList.add('flex');
                 return;
             }
 
-            const hexColors = ['#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#94a3b8'];
-            const datasets = topCerts.map((cert, index) => ({
-                label: cert,
-                data: datasetsMap[cert],
-                backgroundColor: hexColors[index],
-                borderRadius: 4
-            }));
-            
-            if (datasetsMap['기타'].some(val => val > 0)) {
-                datasets.push({ label: '기타', data: datasetsMap['기타'], backgroundColor: hexColors[5], borderRadius: 4 });
-            }
+            elements.tableBody.parentElement.classList.remove('hidden');
+            elements.noDataMessage.classList.add('hidden');
+            elements.noDataMessage.classList.remove('flex');
 
-            charts.cert = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: depts, datasets: datasets },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } },
-                        tooltip: { mode: 'index', intersect: false, padding: 12, cornerRadius: 8 }
-                    },
-                    scales: {
-                        x: { stacked: true, grid: { display: false }, border: { display: false } },
-                        y: { stacked: true, beginAtZero: true, border: { display: false }, ticks: { stepSize: 1 } }
-                    },
-                    animation: { duration: 1000, easing: 'easeOutQuart' }
-                }
-            });
-        };
-
-        const renderTable = () => {
-            const tbody = document.getElementById('table-body');
-            const emptyState = document.getElementById('table-empty');
-            
-            const sortedData = [...filteredData].sort((a, b) => {
-                let valA = String(a[sortState.column] || '');
-                let valB = String(b[sortState.column] || '');
-                if(sortState.direction === 'asc') return valA.localeCompare(valB, 'ko-KR', {numeric: true});
-                else return valB.localeCompare(valA, 'ko-KR', {numeric: true});
-            });
-
-            tbody.innerHTML = '';
-            
-            if (sortedData.length === 0) {
-                emptyState.classList.remove('hidden');
-                return;
-            }
-            emptyState.classList.add('hidden');
-
-            sortedData.forEach((row, index) => {
+            data.forEach((row, index) => {
                 const tr = document.createElement('tr');
-                tr.className = `hover:bg-white/60 transition-colors duration-200 row-enter`;
-                // Staggered animation for table rows (max 20 rows visible for animation to avoid performance hit)
-                if(index < 15) tr.style.animationDelay = `${index * 30}ms`;
-                else tr.style.opacity = 1; tr.style.animation = 'none';
+                tr.className = `group hover:bg-primary-50/50 transition-colors row-enter border-b border-slate-50 last:border-none`;
+                // 순차적 애니메이션 딜레이 (최대 1초까지만)
+                tr.style.animationDelay = `${Math.min(index * 0.03, 1)}s`;
 
-                // OPIC 고급 배지
-                let opic = String(row.OPIC등급 || '').trim();
-                let badgeClass = 'bg-gray-100 text-gray-600 border border-gray-200';
-                let icon = '';
-                if(['AL'].includes(opic.toUpperCase())) { badgeClass = 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm'; icon = '👑 '; }
-                else if(['IH'].includes(opic.toUpperCase())) { badgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm'; }
-                else if(['IM', 'IM1', 'IM2', 'IM3'].includes(opic.toUpperCase())) { badgeClass = 'bg-amber-50 text-amber-700 border border-amber-200'; }
-                else if(['IL', 'NH'].includes(opic.toUpperCase())) { badgeClass = 'bg-orange-50 text-orange-700 border border-orange-200'; }
+                columns.forEach(col => {
+                    const td = document.createElement('td');
+                    const value = row[col] || '-';
+                    
+                    if (col === '구분' && value !== '-') {
+                        // '구분' 컬럼은 세련된 뱃지로 렌더링
+                        const badgeStyle = getBadgeStyle(value);
+                        td.className = 'px-6 py-4 whitespace-nowrap';
+                        td.innerHTML = `<span class="px-2.5 py-1 text-xs font-bold rounded-md border ${badgeStyle}">${value}</span>`;
+                    } else if (col === '모델명' || col === '프로젝트명') {
+                        // 주요 식별자는 글씨를 진하게
+                        td.className = 'px-6 py-4 whitespace-nowrap font-semibold text-slate-800';
+                        td.textContent = value;
+                    } else if (col === '특이사항') {
+                        // 특이사항은 길 수 있으므로 처리
+                        td.className = 'px-6 py-4 text-sm text-slate-600 max-w-xs truncate';
+                        td.textContent = value;
+                        if(value !== '-') td.title = value; // 툴팁
+                    } else {
+                        // 기본 텍스트
+                        td.className = 'px-6 py-4 whitespace-nowrap text-sm text-slate-600';
+                        td.textContent = value;
+                    }
+                    tr.appendChild(td);
+                });
 
-                // 자격증 태그 (세련된 스타일)
-                const certList = String(row.자격증 || '').split(',').map(c => c.trim()).filter(c => c && c !== '없음');
-                let certHtml = '<span class="text-gray-300 italic">보유 내역 없음</span>';
-                if(certList.length > 0) {
-                    certHtml = certList.map(c => `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50/80 text-indigo-700 border border-indigo-100 mr-1 mb-1 backdrop-blur-sm">${c}</span>`).join('');
-                }
-
-                tr.innerHTML = `
-                    <td class="px-6 py-4 font-bold text-gray-900 whitespace-nowrap">${row.번호 || '-'}</td>
-                    <td class="px-6 py-4 font-medium">${row.부서 || '-'}</td>
-                    <td class="px-6 py-4">${row.직급 || '-'}</td>
-                    <td class="px-6 py-4">
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${badgeClass}">
-                            ${icon}${opic || '-'}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-normal flex flex-wrap gap-y-1">${certHtml}</td>
-                `;
-                tbody.appendChild(tr);
+                elements.tableBody.appendChild(tr);
             });
-        };
+        }
 
-        // -------------------------------------------------------------
-        // 7. 엑셀 다운로드
-        // -------------------------------------------------------------
-        const exportToExcel = () => {
-            if(filteredData.length === 0) {
-                alert('다운로드할 데이터가 없습니다.');
+        // 검색 로직
+        function executeSearch() {
+            if (globalData.length === 0) return;
+            const selectedCol = elements.searchColumn.value;
+            const keyword = elements.searchInput.value.trim().toLowerCase();
+
+            if (!keyword) {
+                renderTable(globalData);
                 return;
             }
-            const ws = XLSX.utils.json_to_sheet(filteredData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "역량현황_분석");
-            const dateStr = new Date().toISOString().split('T')[0];
-            XLSX.writeFile(wb, `임직원_역량현황_${dateStr}.xlsx`);
-        };
+
+            const filtered = globalData.filter(row => {
+                const val = row[selectedCol] ? String(row[selectedCol]).toLowerCase() : '';
+                return val.includes(keyword);
+            });
+            renderTable(filtered);
+        }
+
+        // 이벤트 리스너 세팅
+        document.getElementById('searchBtn').addEventListener('click', executeSearch);
+        elements.searchInput.addEventListener('keypress', e => { if (e.key === 'Enter') executeSearch(); });
+        
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            elements.searchInput.value = '';
+            elements.searchColumn.selectedIndex = 0;
+            renderTable(globalData);
+        });
+
     </script>
 </body>
 </html>
+
+
+```
