@@ -4,15 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>공정 불량 데시보드</title>
-    <!-- Tailwind CSS (스타일링) -->
+    <title>공정 불량 이상감지 데시보드</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS (엑셀 파싱) -->
+    <!-- SheetJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Chart.js (차트 생성) -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* 커스텀 스크롤바 */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
@@ -26,16 +25,25 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* 펄스 애니메이션 (이상 감지 강조용) */
+        .pulse-red {
+            animation: pulse-red-anim 2s infinite;
+        }
+        @keyframes pulse-red-anim {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
 
-    <!-- 상단 헤더 -->
+    <!-- 헤더 -->
     <header class="bg-white shadow-sm sticky top-0 z-10">
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                공정 불량 현황 데시보드
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                AI 공정 불량 이상감지 데시보드
             </h1>
             <div id="status-badge" class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
                 데이터 로딩 중...
@@ -43,29 +51,41 @@
         </div>
     </header>
 
-    <!-- 메인 컨텐츠 영역 -->
     <main class="max-w-7xl mx-auto px-4 py-6">
         
-        <!-- 로딩 및 에러 메시지 표시 영역 -->
+        <!-- 로딩/에러 화면 -->
         <div id="loading-container" class="flex flex-col items-center justify-center py-20">
             <div class="loader mb-4"></div>
-            <p class="text-slate-600">공정불량.xlsx 파일을 불러오고 있습니다...</p>
+            <p class="text-slate-600">공정불량.xlsx 데이터를 분석하는 중입니다...</p>
         </div>
 
         <div id="error-container" class="hidden bg-red-50 border border-red-200 text-red-700 px-6 py-8 rounded-xl mb-6 text-center shadow-sm">
             <svg class="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
             <h3 class="text-lg font-bold mb-2">파일을 불러올 수 없습니다.</h3>
             <p id="error-message" class="mb-4">GitHub Pages에 index.html과 동일한 위치에 '공정불량.xlsx' 파일이 있는지 확인해주세요.</p>
-            <!-- 로컬 테스트용 수동 업로드 (GitHub Pages에서는 보통 쓰이지 않으나 예비용) -->
             <div class="mt-4 pt-4 border-t border-red-200">
                 <p class="text-sm text-red-600 mb-2">수동으로 엑셀 파일을 선택하여 확인할 수도 있습니다:</p>
                 <input type="file" id="manual-file-input" accept=".xlsx, .xls" class="block w-full max-w-sm mx-auto text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-100 file:text-red-700 hover:file:bg-red-200"/>
             </div>
         </div>
 
-        <!-- 데시보드 컨텐츠 (데이터 파싱 완료 후 표시됨) -->
+        <!-- 메인 데시보드 컨텐츠 -->
         <div id="dashboard-container" class="hidden space-y-6">
             
+            <!-- 이상 감지 리포트 패널 -->
+            <div id="anomaly-report-panel" class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="px-6 py-4 border-b flex items-center justify-between" id="anomaly-header">
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        이상 감지 리포트 (Z-Score Algorithm)
+                    </h3>
+                    <span id="anomaly-count-badge" class="px-3 py-1 rounded-full text-sm font-bold bg-slate-100 text-slate-600">분석 완료</span>
+                </div>
+                <div class="p-6 bg-slate-50" id="anomaly-content">
+                    <!-- JS로 경고 메시지가 생성됨 -->
+                </div>
+            </div>
+
             <!-- KPI 요약 카드 -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
@@ -84,17 +104,17 @@
 
             <!-- 차트 영역 -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- 날짜별 불량률 추이 (선 차트) -->
-                <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4">일자별 종합 불량률 추이</h3>
+                <!-- 날짜별 추이 -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100 relative">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">일자별 종합 불량률 추이 및 이상 감지</h3>
                     <div class="relative h-72">
                         <canvas id="trendChart"></canvas>
                     </div>
                 </div>
 
-                <!-- 증상별 불량 수량 (막대 차트) -->
+                <!-- 증상별 현황 -->
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4">불량 증상별 수량 (Total)</h3>
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">불량 증상별 수량 (Pareto)</h3>
                     <div class="relative h-72">
                         <canvas id="symptomChart"></canvas>
                     </div>
@@ -103,24 +123,19 @@
 
             <!-- 데이터 테이블 -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                <div class="px-6 py-4 border-b border-slate-100">
                     <h3 class="text-lg font-bold text-slate-800">상세 데이터</h3>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left text-slate-600" id="data-table">
                         <thead class="text-xs text-slate-700 bg-slate-50 border-b border-slate-200 whitespace-nowrap">
-                            <tr id="table-head">
-                                <!-- JS로 채워짐 -->
-                            </tr>
+                            <tr id="table-head"></tr>
                         </thead>
-                        <tbody id="table-body">
-                            <!-- JS로 채워짐 -->
-                        </tbody>
+                        <tbody id="table-body"></tbody>
                     </table>
                 </div>
             </div>
         </div>
-
     </main>
 
     <script>
@@ -128,11 +143,9 @@
         let trendChartInstance = null;
         let symptomChartInstance = null;
 
-        // 초기 실행: 자동 파일 로드
         document.addEventListener('DOMContentLoaded', () => {
             loadExcelFile(FILE_URL);
             
-            // 수동 업로드 이벤트 리스너 연결
             document.getElementById('manual-file-input').addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -145,11 +158,10 @@
             });
         });
 
-        // 엑셀 파일 Fetch
         async function loadExcelFile(url) {
             try {
                 const response = await fetch(url, { cache: 'no-store' });
-                if (!response.ok) throw new Error('Network response was not ok.');
+                if (!response.ok) throw new Error('Network response error');
                 const arrayBuffer = await response.arrayBuffer();
                 processExcelData(arrayBuffer);
             } catch (error) {
@@ -158,41 +170,31 @@
             }
         }
 
-        // 엑셀 데이터 파싱 및 렌더링
         function processExcelData(arrayBuffer) {
             try {
-                // SheetJS로 읽기
                 const workbook = XLSX.read(arrayBuffer, { type: 'array' });
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
-                
-                // 2차원 배열 형태로 추출 (빈 셀은 null/undefined로 유지)
                 const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                 
-                if (rawData.length < 4) {
-                    throw new Error("데이터 구조가 예상과 다릅니다. (최소 4행 이상 필요)");
-                }
+                if (rawData.length < 4) throw new Error("데이터 구조가 올바르지 않습니다.");
 
-                // 1. 헤더 파싱
-                const headers = rawData[0]; // ['불량증상', '구분', 'Total', '날짜1', '날짜2' ...]
-                const dateHeaders = headers.slice(3).filter(h => h); // 3번째 인덱스부터 날짜
+                const headers = rawData[0];
+                const dateHeaders = headers.slice(3).filter(h => h);
                 
-                // 2. 본문 파싱 (3행 단위)
                 const parsedData = [];
                 let currentSymptom = "알수없음";
 
-                // i=1부터 시작, 3행씩 건너뜀 (1: Prodc, 2: Deft, 3: Rate)
                 for (let i = 1; i < rawData.length; i += 3) {
-                    const row1 = rawData[i];   // Prodc. Qty 행
+                    const row1 = rawData[i];   
                     if (!row1 || row1.length === 0) continue;
                     
-                    // 병합된 첫 셀의 값을 유지 (비어있으면 이전 값 사용)
                     if (row1[0] && row1[0].toString().trim() !== "") {
                         currentSymptom = row1[0].toString().trim();
                     }
 
-                    const row2 = rawData[i + 1] || []; // Deft. Qty 행
-                    const row3 = rawData[i + 2] || []; // Deft. Rate 행
+                    const row2 = rawData[i + 1] || []; 
+                    const row3 = rawData[i + 2] || []; 
 
                     const symptomData = {
                         symptom: currentSymptom,
@@ -202,7 +204,6 @@
                         daily: {}
                     };
 
-                    // 날짜별 데이터 매핑
                     dateHeaders.forEach((date, idx) => {
                         const colIdx = 3 + idx;
                         symptomData.daily[date] = {
@@ -211,120 +212,240 @@
                             rate: parseFloat(row3[colIdx]) || 0
                         };
                     });
-
                     parsedData.push(symptomData);
                 }
 
-                // 3. 데시보드 렌더링
                 renderDashboard(parsedData, dateHeaders, rawData);
 
-                // UI 상태 변경
                 document.getElementById('loading-container').classList.add('hidden');
                 document.getElementById('error-container').classList.add('hidden');
                 document.getElementById('dashboard-container').classList.remove('hidden');
                 
                 const badge = document.getElementById('status-badge');
                 badge.className = "px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium";
-                badge.innerText = "데이터 로드 완료";
+                badge.innerText = "분석 완료";
 
             } catch (error) {
                 console.error("데이터 파싱 에러:", error);
-                showError("엑셀 데이터를 분석하는 중 오류가 발생했습니다. 파일 형식을 확인해주세요.");
+                showError("엑셀 데이터를 분석하는 중 오류가 발생했습니다.");
             }
         }
 
-        // 데시보드 UI 업데이트
+        // Z-Score 기반 이상 감지 알고리즘 (일일 불량률 대상)
+        function detectAnomalies(values) {
+            if(values.length === 0) return { mean: 0, stdDev: 0, ucl: 0, results: [] };
+
+            // 평균 계산
+            const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+            
+            // 분산 및 표준편차 계산
+            const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+            const stdDev = Math.sqrt(variance);
+            
+            // UCL (Upper Control Limit) : 평균 + 2 * 표준편차 (약 95% 신뢰구간)
+            const zThreshold = 2.0; 
+            const ucl = mean + (zThreshold * stdDev);
+
+            // 각 데이터 포인트별 이상 여부 판별
+            const results = values.map(val => {
+                const zScore = stdDev === 0 ? 0 : (val - mean) / stdDev;
+                const isAnomaly = zScore > zThreshold; // UCL을 초과하는 경우만 '이상'으로 간주
+                return { value: val, zScore, isAnomaly };
+            });
+
+            return { mean, stdDev, ucl, results };
+        }
+
         function renderDashboard(parsedData, dateHeaders, rawData) {
-            // --- 1. KPI 요약 계산 ---
-            // 여러 증상 간 중복 생산량이 있을 수 있으므로 Total 합산을 주의.
-            // 보통 엑셀상 'Total' 행이 따로 있거나 첫번째 행이 합계일 수 있으나,
-            // 여기서는 각 증상별 데이터를 합산하여 전체 통계를 도출함. (엑셀 구성에 따라 조정 필요)
+            // KPI 계산
             let totalProdc = 0;
             let totalDeft = 0;
             
             parsedData.forEach(item => {
-                // 만약 첫번째 증상이 "Total"이나 "합계" 라면 그것만 사용하도록 분기처리 가능.
-                // 일단 모두 합산하는 로직. (중복합산 우려시 엑셀 양식 확인 요망)
                 if(item.symptom.toLowerCase().includes('total') || item.symptom === '합계') {
                     totalProdc = item.prodcTotal;
                     totalDeft = item.deftTotal;
                 }
             });
 
-            // "합계" 행이 없다면 전부 더함.
             if(totalProdc === 0) {
                 totalProdc = parsedData.reduce((sum, item) => sum + item.prodcTotal, 0);
                 totalDeft = parsedData.reduce((sum, item) => sum + item.deftTotal, 0);
             }
-            
             const overallRate = totalProdc > 0 ? ((totalDeft / totalProdc) * 1000000).toFixed(0) : 0;
 
             document.getElementById('kpi-prodc').innerText = totalProdc.toLocaleString();
             document.getElementById('kpi-deft').innerText = totalDeft.toLocaleString();
             document.getElementById('kpi-rate').innerText = overallRate.toLocaleString();
 
-            // --- 2. 차트 데이터 준비 ---
-            
-            // 일자별 총 생산/불량 집계 (선 차트용)
+            // 일자별 트렌드 데이터 준비
             const dailyTrends = dateHeaders.map(date => {
                 let dProdc = 0;
                 let dDeft = 0;
                 parsedData.forEach(item => {
-                    // 합계 행 중복 방지
                     if(!(item.symptom.toLowerCase().includes('total') || item.symptom === '합계')) {
                         dProdc += item.daily[date]?.prodc || 0;
                         dDeft += item.daily[date]?.deft || 0;
                     }
                 });
-                const dRate = dProdc > 0 ? (dDeft / dProdc) * 1000000 : 0;
-                return dRate;
+                return dProdc > 0 ? (dDeft / dProdc) * 1000000 : 0;
             });
 
-            // 증상별 불량 수량 (막대 차트용 - 합계 행 제외)
-            const symptomNames = [];
-            const symptomDeftValues = [];
+            // 🌟 이상 감지 알고리즘 실행
+            const anomalyAnalysis = detectAnomalies(dailyTrends);
             
+            // 이상 감지 리포트 UI 생성
+            generateAnomalyReport(dateHeaders, anomalyAnalysis);
+
+            // 증상별 데이터 준비 (Total 행 제외)
+            const symptomDataMap = [];
             parsedData.forEach(item => {
                 if(!(item.symptom.toLowerCase().includes('total') || item.symptom === '합계')) {
-                    symptomNames.push(item.symptom);
-                    symptomDeftValues.push(item.deftTotal);
+                    symptomDataMap.push({ name: item.symptom, value: item.deftTotal });
                 }
             });
+            // 불량 수량 내림차순 정렬 (파레토 차트 형태)
+            symptomDataMap.sort((a, b) => b.value - a.value);
+            
+            const symptomNames = symptomDataMap.map(d => d.name);
+            const symptomDeftValues = symptomDataMap.map(d => d.value);
 
-            // --- 3. 차트 그리기 ---
-            drawTrendChart(dateHeaders, dailyTrends);
+            // 차트 렌더링
+            drawTrendChart(dateHeaders, dailyTrends, anomalyAnalysis);
             drawSymptomChart(symptomNames, symptomDeftValues);
-
-            // --- 4. 데이터 테이블 렌더링 ---
             renderTable(rawData);
         }
 
-        // 트렌드 차트 (선 그래프)
-        function drawTrendChart(labels, data) {
+        // 이상 감지 리포트 패널 렌더링
+        function generateAnomalyReport(dates, analysis) {
+            const container = document.getElementById('anomaly-content');
+            const header = document.getElementById('anomaly-header');
+            const badge = document.getElementById('anomaly-count-badge');
+            
+            // 이상 발생 목록 필터링
+            const anomalousItems = analysis.results
+                .map((res, index) => ({ date: dates[index], ...res }))
+                .filter(item => item.isAnomaly);
+
+            container.innerHTML = '';
+
+            if (anomalousItems.length > 0) {
+                header.classList.add('bg-red-50', 'text-red-800', 'border-red-100');
+                badge.classList.replace('bg-slate-100', 'bg-red-500');
+                badge.classList.replace('text-slate-600', 'text-white');
+                badge.classList.add('pulse-red');
+                badge.innerText = `${anomalousItems.length}건 이상 감지`;
+
+                const list = document.createElement('ul');
+                list.className = 'space-y-3';
+                
+                anomalousItems.forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = 'flex items-center justify-between bg-white p-4 rounded-lg border border-red-200 shadow-sm';
+                    li.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <div class="bg-red-100 p-2 rounded-full text-red-600">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-800">${item.date} <span class="text-sm font-normal text-slate-500 ml-2">불량률 급증</span></p>
+                                <p class="text-sm text-slate-600">불량률: <span class="font-bold text-red-600">${item.value.toFixed(0)} ppm</span> (허용 상한치: ${analysis.ucl.toFixed(0)} ppm)</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="block text-xs text-slate-500">Z-Score</span>
+                            <span class="font-bold text-red-600">+${item.zScore.toFixed(2)}</span>
+                        </div>
+                    `;
+                    list.appendChild(li);
+                });
+                container.appendChild(list);
+            } else {
+                header.classList.remove('bg-red-50', 'text-red-800');
+                header.classList.add('bg-white', 'text-slate-800');
+                badge.classList.replace('bg-red-500', 'bg-green-100');
+                badge.classList.replace('text-white', 'text-green-800');
+                badge.classList.remove('pulse-red');
+                badge.innerText = '정상 (이상 없음)';
+
+                container.innerHTML = `
+                    <div class="flex items-center gap-3 text-slate-600">
+                        <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <p>분석 기간 내 통계적 범위를 벗어나는 이상 불량률이 발견되지 않았습니다. (안정 상태)</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 트렌드 차트 (이상 감지 데이터 반영)
+        function drawTrendChart(labels, data, analysis) {
             const ctx = document.getElementById('trendChart').getContext('2d');
             if (trendChartInstance) trendChartInstance.destroy();
+
+            // 포인트 색상 및 크기 동적 설정 (이상이면 빨간색 크고, 정상은 파란색 작게)
+            const pointColors = analysis.results.map(r => r.isAnomaly ? '#ef4444' : '#ffffff');
+            const pointBorders = analysis.results.map(r => r.isAnomaly ? '#b91c1c' : '#3b82f6');
+            const pointRadii = analysis.results.map(r => r.isAnomaly ? 6 : 4);
+            const pointHoverRadii = analysis.results.map(r => r.isAnomaly ? 8 : 6);
+
+            // 관리 상한선 데이터 (모든 날짜에 대해 ucl 값)
+            const uclData = Array(labels.length).fill(analysis.ucl);
 
             trendChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: '불량률 (ppm)',
-                        data: data,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 2,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#3b82f6',
-                        pointRadius: 4,
-                        fill: true,
-                        tension: 0.3
-                    }]
+                    datasets: [
+                        {
+                            label: '불량률 (ppm)',
+                            data: data,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: pointColors,
+                            pointBorderColor: pointBorders,
+                            pointRadius: pointRadii,
+                            pointHoverRadius: pointHoverRadii,
+                            fill: true,
+                            tension: 0.3,
+                            order: 2
+                        },
+                        {
+                            label: '관리 상한선 (UCL, +2 Sigma)',
+                            data: uclData,
+                            borderColor: '#ef4444',
+                            borderWidth: 1.5,
+                            borderDash: [5, 5], // 점선 스타일
+                            pointRadius: 0,
+                            fill: false,
+                            order: 1
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y.toFixed(0);
+                                    }
+                                    // 이상치 툴팁에 경고 추가
+                                    if (context.datasetIndex === 0 && analysis.results[context.dataIndex].isAnomaly) {
+                                        label += ' ⚠️ (이상 감지됨)';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
                     scales: {
                         y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
                         x: { grid: { display: false } }
@@ -333,19 +454,19 @@
             });
         }
 
-        // 증상별 불량 차트 (막대 그래프)
+        // 증상별 불량 차트
         function drawSymptomChart(labels, data) {
             const ctx = document.getElementById('symptomChart').getContext('2d');
             if (symptomChartInstance) symptomChartInstance.destroy();
 
-            trendChartInstance = new Chart(ctx, {
+            symptomChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: '불량 수량',
+                        label: '누적 불량 수량',
                         data: data,
-                        backgroundColor: '#ef4444',
+                        backgroundColor: data.map((_, i) => i === 0 ? '#ef4444' : '#f87171'), // 1위만 진한 빨간색
                         borderRadius: 4,
                     }]
                 },
@@ -355,13 +476,12 @@
                     plugins: { legend: { display: false } },
                     scales: {
                         y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
-                        x: { grid: { display: false } }
+                        x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45 } }
                     }
                 }
             });
         }
 
-        // 하단 상세 데이터 테이블 (병합된 형태를 텍스트로 풀어 출력)
         function renderTable(rawData) {
             const headContainer = document.getElementById('table-head');
             const bodyContainer = document.getElementById('table-body');
@@ -371,7 +491,6 @@
 
             if(rawData.length === 0) return;
 
-            // 헤더 렌더링
             const headers = rawData[0];
             headers.forEach(h => {
                 const th = document.createElement('th');
@@ -380,47 +499,41 @@
                 headContainer.appendChild(th);
             });
 
-            // 본문 렌더링 (병합셀 시각화 유지)
             let currentSymptom = "";
             for (let i = 1; i < rawData.length; i++) {
                 const row = rawData[i];
                 if (!row || row.length === 0) continue;
 
                 const tr = document.createElement('tr');
-                tr.className = "border-b border-slate-100 hover:bg-slate-50";
+                tr.className = "border-b border-slate-100 hover:bg-slate-50 transition-colors";
 
-                // 불량증상 (인덱스 0)
                 const td0 = document.createElement('td');
                 td0.className = "px-6 py-2 font-medium text-slate-800";
                 
-                // 3행 중 첫행에만 값이 있으므로, 있으면 저장, 없으면 이전값(CSS로 흐리게 처리)
                 if (row[0]) {
                     currentSymptom = row[0];
                     td0.innerText = currentSymptom;
                 } else {
                     td0.innerText = currentSymptom;
-                    td0.classList.add('text-slate-300'); // 병합된 아래 셀들은 흐리게
+                    td0.classList.add('text-slate-300'); 
                 }
                 tr.appendChild(td0);
 
-                // 나머지 데이터 셀들
                 for(let j = 1; j < headers.length; j++) {
                     const td = document.createElement('td');
                     td.className = "px-6 py-2";
                     
                     let val = row[j] !== undefined ? row[j] : '';
-                    // 숫자인 경우 콤마 포맷 적용
                     if(!isNaN(val) && val !== '') {
                         val = Number(val).toLocaleString();
                     }
                     
-                    // 구분 컬럼 색상 처리
                     if(j === 1) {
                         if(val.includes('Prodc')) td.classList.add('text-slate-600');
                         if(val.includes('Deft. Qty')) td.classList.add('text-red-500');
                         if(val.includes('Rate')) td.classList.add('text-orange-500');
                     } else if (j >= 2) {
-                        td.classList.add('text-right'); // 숫자는 우측 정렬
+                        td.classList.add('text-right');
                     }
 
                     td.innerText = val;
@@ -430,7 +543,6 @@
             }
         }
 
-        // 에러 UI 표시
         function showError(msg) {
             document.getElementById('loading-container').classList.add('hidden');
             document.getElementById('dashboard-container').classList.add('hidden');
@@ -442,7 +554,8 @@
             badge.className = "px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium";
             badge.innerText = "데이터 로드 실패";
         }
-
     </script>
 </body>
 </html>
+
+
