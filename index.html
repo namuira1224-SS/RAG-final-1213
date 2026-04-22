@@ -1,470 +1,448 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>프리미엄 신뢰성 승인 관리</title>
-    
-    <!-- 폰트: 프리텐다드 -->
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
-    
-    <!-- Tailwind CSS -->
+    <title>공정 불량 데시보드</title>
+    <!-- Tailwind CSS (스타일링) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- SheetJS -->
+    <!-- SheetJS (엑셀 파싱) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
-    <!-- 아이콘 라이브러리 -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['"Pretendard Variable"', 'Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'sans-serif'] },
-                    colors: { primary: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' } }
-                }
-            }
-        }
-    </script>
-
+    <!-- Chart.js (차트 생성) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* 커스텀 스크롤바 */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-        /* 배경 애니메이션 */
-        .bg-shape {
-            position: fixed; filter: blur(100px); opacity: 0.5; z-index: -1;
-            animation: float 20s infinite ease-in-out alternate;
-        }
-        .shape-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(59,130,246,0.3) 0%, rgba(255,255,255,0) 70%); }
-        .shape-2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(139,92,246,0.2) 0%, rgba(255,255,255,0) 70%); animation-delay: -10s; }
-
-        @keyframes float {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(5%, 5%) scale(1.1); }
-        }
-
-        /* 애니메이션 */
-        .fade-in-up {
-            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            opacity: 0; transform: translateY(20px);
-        }
-        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
-
-        .row-enter {
-            animation: rowFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            opacity: 0; transform: translateY(5px);
-        }
-        @keyframes rowFadeIn { to { opacity: 1; transform: translateY(0); } }
-
-        /* 글래스모피즘 */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0,0,0,0.02);
-        }
-
-        /* 로딩 스피너 */
-        .spinner {
-            width: 40px; height: 40px;
-            border: 4px solid rgba(59, 130, 246, 0.1);
-            border-left-color: #3b82f6;
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
             border-radius: 50%;
+            width: 40px;
+            height: 40px;
             animation: spin 1s linear infinite;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* 커스텀 셀렉트 화살표 디자인 */
-        select {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 0.75rem center;
-            background-size: 1rem;
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-[#f8fafc] text-slate-800 min-h-screen relative overflow-x-hidden antialiased">
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
 
-    <!-- 배경 요소 -->
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
+    <!-- 상단 헤더 -->
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                공정 불량 현황 데시보드
+            </h1>
+            <div id="status-badge" class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                데이터 로딩 중...
+            </div>
+        </div>
+    </header>
 
-    <!-- 로딩 오버레이 -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center transition-opacity duration-500">
-        <div class="spinner mb-4"></div>
-        <p class="text-slate-600 font-medium animate-pulse">데이터를 동기화하고 있습니다...</p>
-    </div>
-
-    <main class="max-w-[1400px] mx-auto p-4 md:p-8 lg:p-12 relative z-10 flex flex-col gap-8 min-h-screen">
+    <!-- 메인 컨텐츠 영역 -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
         
-        <!-- 헤더 영역 -->
-        <header class="fade-in-up flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-            <div>
-                <div class="flex items-center gap-2 mb-2 text-primary-600 font-semibold tracking-wide text-sm">
-                    <i data-lucide="shield-check" class="w-5 h-5"></i>
-                    <span>RELIABILITY APPROVAL SYSTEM</span>
-                </div>
-                <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">
-                    모델별 <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">신뢰성 승인</span> 관리
-                </h1>
-            </div>
-            
-            <div id="statusBadge" class="px-4 py-2 rounded-full bg-slate-100 text-slate-600 text-sm font-medium border border-slate-200 flex items-center gap-2 shadow-sm">
-                <span class="relative flex h-2.5 w-2.5">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary-500"></span>
-                </span>
-                데이터 로드 대기중
-            </div>
-        </header>
-
-        <!-- 수동 업로드 영역 -->
-        <div id="manualUploadSection" class="hidden glass-card rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 fade-in-up" style="animation-delay: 0.1s;">
-            <div class="flex items-center gap-3 text-amber-600">
-                <div class="p-2 bg-amber-100 rounded-full"><i data-lucide="alert-circle" class="w-5 h-5"></i></div>
-                <div>
-                    <h3 class="font-bold text-slate-800">로컬 환경 감지됨</h3>
-                    <p class="text-sm text-slate-500">서버에서 파일을 찾을 수 없습니다. 엑셀 파일을 직접 업로드해주세요.</p>
-                </div>
-            </div>
-            <label class="cursor-pointer bg-white border border-slate-200 hover:border-primary-500 hover:bg-primary-50 text-slate-700 px-6 py-3 rounded-xl transition-all font-medium flex items-center gap-2 shadow-sm">
-                <i data-lucide="upload" class="w-4 h-4"></i>
-                엑셀 파일 선택
-                <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="hidden" />
-            </label>
+        <!-- 로딩 및 에러 메시지 표시 영역 -->
+        <div id="loading-container" class="flex flex-col items-center justify-center py-20">
+            <div class="loader mb-4"></div>
+            <p class="text-slate-600">공정불량.xlsx 파일을 불러오고 있습니다...</p>
         </div>
 
-        <!-- 다중 필터 컨트롤 영역 (엑셀 콤보박스 방식) -->
-        <div class="glass-card rounded-2xl p-5 fade-in-up" style="animation-delay: 0.2s;">
-            <div class="flex items-center gap-2 mb-4 text-slate-700 font-semibold text-sm">
-                <i data-lucide="filter" class="w-4 h-4"></i>
-                데이터 필터링 (다중 선택 가능)
-            </div>
-            
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                
-                <!-- 협력사 필터 -->
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-xs font-semibold text-slate-500 px-1">협력사</label>
-                    <select id="filter-partner" class="w-full bg-slate-50/80 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all cursor-pointer">
-                        <option value="">전체 (All)</option>
-                    </select>
-                </div>
-
-                <!-- 모델명 필터 -->
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-xs font-semibold text-slate-500 px-1">모델명</label>
-                    <select id="filter-model" class="w-full bg-slate-50/80 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all cursor-pointer">
-                        <option value="">전체 (All)</option>
-                    </select>
-                </div>
-
-                <!-- 마케팅명 필터 -->
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-xs font-semibold text-slate-500 px-1">마케팅명</label>
-                    <select id="filter-marketing" class="w-full bg-slate-50/80 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all cursor-pointer">
-                        <option value="">전체 (All)</option>
-                    </select>
-                </div>
-
-                <!-- 프로젝트명 필터 -->
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-xs font-semibold text-slate-500 px-1">프로젝트명</label>
-                    <select id="filter-project" class="w-full bg-slate-50/80 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all cursor-pointer">
-                        <option value="">전체 (All)</option>
-                    </select>
-                </div>
-
-                <!-- 구분 필터 -->
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-xs font-semibold text-slate-500 px-1">구분</label>
-                    <select id="filter-type" class="w-full bg-slate-50/80 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all cursor-pointer">
-                        <option value="">전체 (All)</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- 초기화 버튼 -->
-            <div class="mt-4 flex justify-end">
-                <button id="resetFiltersBtn" class="text-sm px-4 py-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 font-medium transition-colors flex items-center gap-1.5">
-                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> 필터 초기화
-                </button>
+        <div id="error-container" class="hidden bg-red-50 border border-red-200 text-red-700 px-6 py-8 rounded-xl mb-6 text-center shadow-sm">
+            <svg class="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <h3 class="text-lg font-bold mb-2">파일을 불러올 수 없습니다.</h3>
+            <p id="error-message" class="mb-4">GitHub Pages에 index.html과 동일한 위치에 '공정불량.xlsx' 파일이 있는지 확인해주세요.</p>
+            <!-- 로컬 테스트용 수동 업로드 (GitHub Pages에서는 보통 쓰이지 않으나 예비용) -->
+            <div class="mt-4 pt-4 border-t border-red-200">
+                <p class="text-sm text-red-600 mb-2">수동으로 엑셀 파일을 선택하여 확인할 수도 있습니다:</p>
+                <input type="file" id="manual-file-input" accept=".xlsx, .xls" class="block w-full max-w-sm mx-auto text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-100 file:text-red-700 hover:file:bg-red-200"/>
             </div>
         </div>
 
-        <!-- 데이터 테이블 카드 -->
-        <div class="glass-card rounded-3xl overflow-hidden flex-1 flex flex-col fade-in-up" style="animation-delay: 0.3s;">
+        <!-- 데시보드 컨텐츠 (데이터 파싱 완료 후 표시됨) -->
+        <div id="dashboard-container" class="hidden space-y-6">
             
-            <div class="px-6 py-4 bg-white/50 border-b border-slate-100 flex justify-between items-center">
-                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    승인 데이터 목록
-                    <span id="resultCount" class="bg-primary-100 text-primary-700 py-0.5 px-2.5 rounded-full text-xs font-bold">0</span>
-                </h2>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50/80 backdrop-blur-md border-b border-slate-200">
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">협력사</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">모델명</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">마케팅명</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">프로젝트명</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap text-center">구분</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">승인일</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">특이사항</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-100 bg-white/40">
-                        <!-- 데이터 렌더링 영역 -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 데이터 없음 상태 UI -->
-            <div id="noDataMessage" class="hidden flex-col items-center justify-center py-20 px-4 text-center">
-                <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400">
-                    <i data-lucide="inbox" class="w-10 h-10"></i>
+            <!-- KPI 요약 카드 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
+                    <h3 class="text-slate-500 text-sm font-medium mb-1">총 생산 수량 (Total Prodc. Qty)</h3>
+                    <div class="text-3xl font-bold text-slate-800" id="kpi-prodc">-</div>
                 </div>
-                <h3 class="text-xl font-bold text-slate-700 mb-2">조건에 맞는 데이터가 없습니다</h3>
-                <p class="text-slate-500 max-w-md">선택한 필터 조건에 해당하는 승인 내역이 없습니다. 다른 필터를 선택해주세요.</p>
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
+                    <h3 class="text-slate-500 text-sm font-medium mb-1">총 불량 수량 (Total Deft. Qty)</h3>
+                    <div class="text-3xl font-bold text-red-600" id="kpi-deft">-</div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
+                    <h3 class="text-slate-500 text-sm font-medium mb-1">평균 불량률 (Deft. Rate ppm)</h3>
+                    <div class="text-3xl font-bold text-orange-500" id="kpi-rate">-</div>
+                </div>
+            </div>
+
+            <!-- 차트 영역 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- 날짜별 불량률 추이 (선 차트) -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">일자별 종합 불량률 추이</h3>
+                    <div class="relative h-72">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 증상별 불량 수량 (막대 차트) -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">불량 증상별 수량 (Total)</h3>
+                    <div class="relative h-72">
+                        <canvas id="symptomChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 데이터 테이블 -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-slate-800">상세 데이터</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-600" id="data-table">
+                        <thead class="text-xs text-slate-700 bg-slate-50 border-b border-slate-200 whitespace-nowrap">
+                            <tr id="table-head">
+                                <!-- JS로 채워짐 -->
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- JS로 채워짐 -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-        
-        <footer class="text-center text-slate-400 text-sm mt-4 fade-in-up pb-8" style="animation-delay: 0.4s;">
-            &copy; Reliability Approval Dashboard. Automatically synced with Excel data.
-        </footer>
+
     </main>
 
     <script>
-        lucide.createIcons();
+        const FILE_URL = './공정불량.xlsx';
+        let trendChartInstance = null;
+        let symptomChartInstance = null;
 
-        let globalData = [];
-        const FILE_NAME = './모델별 신뢰성 승인 관리.xlsx';
-        const columns = ['협력사', '모델명', '마케팅명', '프로젝트명', '구분', '승인일', '특이사항'];
-
-        // 콤보박스 필터 대상과 해당 컬럼명 매핑
-        const filterConfig = [
-            { id: 'filter-partner', colName: '협력사' },
-            { id: 'filter-model', colName: '모델명' },
-            { id: 'filter-marketing', colName: '마케팅명' },
-            { id: 'filter-project', colName: '프로젝트명' },
-            { id: 'filter-type', colName: '구분' }
-        ];
-
-        const elements = {
-            loadingOverlay: document.getElementById('loadingOverlay'),
-            statusBadge: document.getElementById('statusBadge'),
-            manualUploadSection: document.getElementById('manualUploadSection'),
-            tableBody: document.getElementById('tableBody'),
-            noDataMessage: document.getElementById('noDataMessage'),
-            resultCount: document.getElementById('resultCount')
-        };
-
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => loadExcelFromServer(), 500);
+        // 초기 실행: 자동 파일 로드
+        document.addEventListener('DOMContentLoaded', () => {
+            loadExcelFile(FILE_URL);
+            
+            // 수동 업로드 이벤트 리스너 연결
+            document.getElementById('manual-file-input').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        processExcelData(e.target.result);
+                    };
+                    reader.readAsArrayBuffer(file);
+                }
+            });
         });
 
-        // 상태 뱃지 UI 업데이트
-        function updateStatus(text, type = 'waiting') {
-            const dot = elements.statusBadge.querySelector('span');
-            elements.statusBadge.innerHTML = '';
-            elements.statusBadge.appendChild(dot);
-            elements.statusBadge.append(` ${text}`);
-            
-            elements.statusBadge.className = 'px-4 py-2 rounded-full text-sm font-medium border flex items-center gap-2 shadow-sm transition-colors';
-            
-            if (type === 'success') {
-                elements.statusBadge.classList.add('bg-emerald-50', 'text-emerald-700', 'border-emerald-200');
-                dot.innerHTML = `<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>`;
-            } else if (type === 'error') {
-                elements.statusBadge.classList.add('bg-rose-50', 'text-rose-700', 'border-rose-200');
-                dot.innerHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>`;
-            } else {
-                elements.statusBadge.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-200');
-                dot.innerHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-slate-500"></span>`;
-            }
-        }
-
-        // 서버에서 엑셀 파일 로딩
-        async function loadExcelFromServer() {
+        // 엑셀 파일 Fetch
+        async function loadExcelFile(url) {
             try {
-                const response = await fetch(FILE_NAME);
-                if (!response.ok) throw new Error('파일 없음');
+                const response = await fetch(url, { cache: 'no-store' });
+                if (!response.ok) throw new Error('Network response was not ok.');
                 const arrayBuffer = await response.arrayBuffer();
                 processExcelData(arrayBuffer);
             } catch (error) {
-                console.warn(error);
-                updateStatus('로컬 환경 / 파일 없음', 'error');
-                hideLoading();
-                elements.manualUploadSection.classList.remove('hidden');
+                console.error("파일 로드 에러:", error);
+                showError("서버에서 '공정불량.xlsx' 파일을 찾을 수 없습니다.");
             }
         }
 
-        // 수동 업로드 (로컬 환경용)
-        document.getElementById('excelFileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            elements.loadingOverlay.classList.remove('hidden');
-            setTimeout(() => elements.loadingOverlay.style.opacity = '1', 10);
-            
-            const reader = new FileReader();
-            reader.onload = e => processExcelData(new Uint8Array(e.target.result));
-            reader.readAsArrayBuffer(file);
-        });
-
-        function hideLoading() {
-            elements.loadingOverlay.style.opacity = '0';
-            setTimeout(() => elements.loadingOverlay.classList.add('hidden'), 500);
-        }
-
-        // 엑셀 데이터 파싱
-        function processExcelData(data) {
+        // 엑셀 데이터 파싱 및 렌더링
+        function processExcelData(arrayBuffer) {
             try {
-                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                // SheetJS로 읽기
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
                 
-                globalData = XLSX.utils.sheet_to_json(worksheet, { raw: false, dateNF: 'yyyy-mm-dd' });
+                // 2차원 배열 형태로 추출 (빈 셀은 null/undefined로 유지)
+                const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                if (rawData.length < 4) {
+                    throw new Error("데이터 구조가 예상과 다릅니다. (최소 4행 이상 필요)");
+                }
 
-                updateStatus('동기화 완료 (Live)', 'success');
+                // 1. 헤더 파싱
+                const headers = rawData[0]; // ['불량증상', '구분', 'Total', '날짜1', '날짜2' ...]
+                const dateHeaders = headers.slice(3).filter(h => h); // 3번째 인덱스부터 날짜
                 
-                // 1. 콤보박스 목록 생성
-                populateDropdowns(globalData);
+                // 2. 본문 파싱 (3행 단위)
+                const parsedData = [];
+                let currentSymptom = "알수없음";
+
+                // i=1부터 시작, 3행씩 건너뜀 (1: Prodc, 2: Deft, 3: Rate)
+                for (let i = 1; i < rawData.length; i += 3) {
+                    const row1 = rawData[i];   // Prodc. Qty 행
+                    if (!row1 || row1.length === 0) continue;
+                    
+                    // 병합된 첫 셀의 값을 유지 (비어있으면 이전 값 사용)
+                    if (row1[0] && row1[0].toString().trim() !== "") {
+                        currentSymptom = row1[0].toString().trim();
+                    }
+
+                    const row2 = rawData[i + 1] || []; // Deft. Qty 행
+                    const row3 = rawData[i + 2] || []; // Deft. Rate 행
+
+                    const symptomData = {
+                        symptom: currentSymptom,
+                        prodcTotal: parseFloat(row1[2]) || 0,
+                        deftTotal: parseFloat(row2[2]) || 0,
+                        rateTotal: parseFloat(row3[2]) || 0,
+                        daily: {}
+                    };
+
+                    // 날짜별 데이터 매핑
+                    dateHeaders.forEach((date, idx) => {
+                        const colIdx = 3 + idx;
+                        symptomData.daily[date] = {
+                            prodc: parseFloat(row1[colIdx]) || 0,
+                            deft: parseFloat(row2[colIdx]) || 0,
+                            rate: parseFloat(row3[colIdx]) || 0
+                        };
+                    });
+
+                    parsedData.push(symptomData);
+                }
+
+                // 3. 데시보드 렌더링
+                renderDashboard(parsedData, dateHeaders, rawData);
+
+                // UI 상태 변경
+                document.getElementById('loading-container').classList.add('hidden');
+                document.getElementById('error-container').classList.add('hidden');
+                document.getElementById('dashboard-container').classList.remove('hidden');
                 
-                // 2. 전체 데이터 테이블 렌더링
-                renderTable(globalData);
-                
-                elements.manualUploadSection.classList.add('hidden');
+                const badge = document.getElementById('status-badge');
+                badge.className = "px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium";
+                badge.innerText = "데이터 로드 완료";
+
             } catch (error) {
-                updateStatus('데이터 분석 오류', 'error');
-                alert('엑셀 파일을 읽는 중 오류가 발생했습니다.');
-            } finally {
-                hideLoading();
+                console.error("데이터 파싱 에러:", error);
+                showError("엑셀 데이터를 분석하는 중 오류가 발생했습니다. 파일 형식을 확인해주세요.");
             }
         }
 
-        // ✨ 엑셀 데이터를 기반으로 콤보박스 목록(Option) 자동 생성
-        function populateDropdowns(data) {
-            filterConfig.forEach(config => {
-                const selectElement = document.getElementById(config.id);
-                if (!selectElement) return;
-
-                // 해당 컬럼의 데이터 중 중복을 제거하고 빈 값 제외 후 정렬
-                const uniqueValues = [...new Set(data.map(row => row[config.colName]).filter(val => val !== undefined && val !== null && String(val).trim() !== ''))].sort();
-
-                // 기존 옵션 지우고 '전체' 옵션만 남기기
-                selectElement.innerHTML = '<option value="">전체 (All)</option>';
-
-                // 추출된 고유 값들을 Option 태그로 추가
-                uniqueValues.forEach(value => {
-                    const option = document.createElement('option');
-                    option.value = value;
-                    option.textContent = value;
-                    selectElement.appendChild(option);
-                });
-
-                // 선택 값이 변경될 때마다 필터링 함수 실행 (이벤트 리스너 연결)
-                selectElement.addEventListener('change', applyFilters);
-            });
-        }
-
-        // ✨ 다중 조건 필터링 적용 함수
-        function applyFilters() {
-            let filteredData = globalData;
-
-            // 각 콤보박스의 선택값을 확인하여 교집합(AND) 조건으로 필터링
-            filterConfig.forEach(config => {
-                const selectElement = document.getElementById(config.id);
-                const selectedValue = selectElement.value;
-
-                // '전체'가 아닌 특정 값이 선택되었다면
-                if (selectedValue !== "") {
-                    filteredData = filteredData.filter(row => {
-                        return row[config.colName] === selectedValue;
-                    });
+        // 데시보드 UI 업데이트
+        function renderDashboard(parsedData, dateHeaders, rawData) {
+            // --- 1. KPI 요약 계산 ---
+            // 여러 증상 간 중복 생산량이 있을 수 있으므로 Total 합산을 주의.
+            // 보통 엑셀상 'Total' 행이 따로 있거나 첫번째 행이 합계일 수 있으나,
+            // 여기서는 각 증상별 데이터를 합산하여 전체 통계를 도출함. (엑셀 구성에 따라 조정 필요)
+            let totalProdc = 0;
+            let totalDeft = 0;
+            
+            parsedData.forEach(item => {
+                // 만약 첫번째 증상이 "Total"이나 "합계" 라면 그것만 사용하도록 분기처리 가능.
+                // 일단 모두 합산하는 로직. (중복합산 우려시 엑셀 양식 확인 요망)
+                if(item.symptom.toLowerCase().includes('total') || item.symptom === '합계') {
+                    totalProdc = item.prodcTotal;
+                    totalDeft = item.deftTotal;
                 }
             });
 
-            // 필터링된 결과로 테이블 다시 그리기
-            renderTable(filteredData);
-        }
-
-        // 뱃지 디자인 유틸리티
-        function getBadgeStyle(text) {
-            if (!text) return '';
-            const t = text.trim();
-            if (t.includes('완료') || t.includes('승인') || t.includes('적합')) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-            if (t.includes('진행') || t.includes('검토')) return 'bg-blue-100 text-blue-700 border-blue-200';
-            if (t.includes('반려') || t.includes('보류') || t.includes('취소') || t.includes('부적합')) return 'bg-rose-100 text-rose-700 border-rose-200';
-            if (t.includes('예정') || t.includes('대기')) return 'bg-amber-100 text-amber-700 border-amber-200';
-            return 'bg-slate-100 text-slate-700 border-slate-200';
-        }
-
-        // 테이블 그리기
-        function renderTable(data) {
-            elements.tableBody.innerHTML = '';
-            elements.resultCount.textContent = data.length;
-
-            if (data.length === 0) {
-                elements.tableBody.parentElement.classList.add('hidden');
-                elements.noDataMessage.classList.remove('hidden');
-                elements.noDataMessage.classList.add('flex');
-                return;
+            // "합계" 행이 없다면 전부 더함.
+            if(totalProdc === 0) {
+                totalProdc = parsedData.reduce((sum, item) => sum + item.prodcTotal, 0);
+                totalDeft = parsedData.reduce((sum, item) => sum + item.deftTotal, 0);
             }
+            
+            const overallRate = totalProdc > 0 ? ((totalDeft / totalProdc) * 1000000).toFixed(0) : 0;
 
-            elements.tableBody.parentElement.classList.remove('hidden');
-            elements.noDataMessage.classList.add('hidden');
-            elements.noDataMessage.classList.remove('flex');
+            document.getElementById('kpi-prodc').innerText = totalProdc.toLocaleString();
+            document.getElementById('kpi-deft').innerText = totalDeft.toLocaleString();
+            document.getElementById('kpi-rate').innerText = overallRate.toLocaleString();
 
-            data.forEach((row, index) => {
-                const tr = document.createElement('tr');
-                tr.className = `group hover:bg-primary-50/50 transition-colors row-enter border-b border-slate-50 last:border-none`;
-                
-                // 행이 많아도 부드럽게 나타나도록 딜레이 최대치 제한
-                tr.style.animationDelay = `${Math.min(index * 0.02, 0.5)}s`;
-
-                columns.forEach(col => {
-                    const td = document.createElement('td');
-                    const value = row[col] || '-';
-                    
-                    if (col === '구분' && value !== '-') {
-                        const badgeStyle = getBadgeStyle(value);
-                        td.className = 'px-6 py-4 whitespace-nowrap text-center';
-                        td.innerHTML = `<span class="px-2.5 py-1.5 text-xs font-bold rounded-md border shadow-sm ${badgeStyle}">${value}</span>`;
-                    } else if (col === '모델명' || col === '프로젝트명') {
-                        td.className = 'px-6 py-4 whitespace-nowrap font-semibold text-slate-800';
-                        td.textContent = value;
-                    } else if (col === '특이사항') {
-                        td.className = 'px-6 py-4 text-sm text-slate-600 max-w-xs truncate';
-                        td.textContent = value;
-                        if(value !== '-') td.title = value; 
-                    } else {
-                        td.className = 'px-6 py-4 whitespace-nowrap text-sm text-slate-600';
-                        td.textContent = value;
+            // --- 2. 차트 데이터 준비 ---
+            
+            // 일자별 총 생산/불량 집계 (선 차트용)
+            const dailyTrends = dateHeaders.map(date => {
+                let dProdc = 0;
+                let dDeft = 0;
+                parsedData.forEach(item => {
+                    // 합계 행 중복 방지
+                    if(!(item.symptom.toLowerCase().includes('total') || item.symptom === '합계')) {
+                        dProdc += item.daily[date]?.prodc || 0;
+                        dDeft += item.daily[date]?.deft || 0;
                     }
-                    tr.appendChild(td);
                 });
+                const dRate = dProdc > 0 ? (dDeft / dProdc) * 1000000 : 0;
+                return dRate;
+            });
 
-                elements.tableBody.appendChild(tr);
+            // 증상별 불량 수량 (막대 차트용 - 합계 행 제외)
+            const symptomNames = [];
+            const symptomDeftValues = [];
+            
+            parsedData.forEach(item => {
+                if(!(item.symptom.toLowerCase().includes('total') || item.symptom === '합계')) {
+                    symptomNames.push(item.symptom);
+                    symptomDeftValues.push(item.deftTotal);
+                }
+            });
+
+            // --- 3. 차트 그리기 ---
+            drawTrendChart(dateHeaders, dailyTrends);
+            drawSymptomChart(symptomNames, symptomDeftValues);
+
+            // --- 4. 데이터 테이블 렌더링 ---
+            renderTable(rawData);
+        }
+
+        // 트렌드 차트 (선 그래프)
+        function drawTrendChart(labels, data) {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            if (trendChartInstance) trendChartInstance.destroy();
+
+            trendChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '불량률 (ppm)',
+                        data: data,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#3b82f6',
+                        pointRadius: 4,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
             });
         }
 
-        // 필터 초기화 버튼 이벤트
-        document.getElementById('resetFiltersBtn').addEventListener('click', () => {
-            filterConfig.forEach(config => {
-                document.getElementById(config.id).value = "";
+        // 증상별 불량 차트 (막대 그래프)
+        function drawSymptomChart(labels, data) {
+            const ctx = document.getElementById('symptomChart').getContext('2d');
+            if (symptomChartInstance) symptomChartInstance.destroy();
+
+            trendChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '불량 수량',
+                        data: data,
+                        backgroundColor: '#ef4444',
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
             });
-            renderTable(globalData); // 원본 데이터로 복귀
-        });
+        }
+
+        // 하단 상세 데이터 테이블 (병합된 형태를 텍스트로 풀어 출력)
+        function renderTable(rawData) {
+            const headContainer = document.getElementById('table-head');
+            const bodyContainer = document.getElementById('table-body');
+            
+            headContainer.innerHTML = '';
+            bodyContainer.innerHTML = '';
+
+            if(rawData.length === 0) return;
+
+            // 헤더 렌더링
+            const headers = rawData[0];
+            headers.forEach(h => {
+                const th = document.createElement('th');
+                th.className = "px-6 py-3 font-semibold text-slate-700";
+                th.innerText = h || '';
+                headContainer.appendChild(th);
+            });
+
+            // 본문 렌더링 (병합셀 시각화 유지)
+            let currentSymptom = "";
+            for (let i = 1; i < rawData.length; i++) {
+                const row = rawData[i];
+                if (!row || row.length === 0) continue;
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100 hover:bg-slate-50";
+
+                // 불량증상 (인덱스 0)
+                const td0 = document.createElement('td');
+                td0.className = "px-6 py-2 font-medium text-slate-800";
+                
+                // 3행 중 첫행에만 값이 있으므로, 있으면 저장, 없으면 이전값(CSS로 흐리게 처리)
+                if (row[0]) {
+                    currentSymptom = row[0];
+                    td0.innerText = currentSymptom;
+                } else {
+                    td0.innerText = currentSymptom;
+                    td0.classList.add('text-slate-300'); // 병합된 아래 셀들은 흐리게
+                }
+                tr.appendChild(td0);
+
+                // 나머지 데이터 셀들
+                for(let j = 1; j < headers.length; j++) {
+                    const td = document.createElement('td');
+                    td.className = "px-6 py-2";
+                    
+                    let val = row[j] !== undefined ? row[j] : '';
+                    // 숫자인 경우 콤마 포맷 적용
+                    if(!isNaN(val) && val !== '') {
+                        val = Number(val).toLocaleString();
+                    }
+                    
+                    // 구분 컬럼 색상 처리
+                    if(j === 1) {
+                        if(val.includes('Prodc')) td.classList.add('text-slate-600');
+                        if(val.includes('Deft. Qty')) td.classList.add('text-red-500');
+                        if(val.includes('Rate')) td.classList.add('text-orange-500');
+                    } else if (j >= 2) {
+                        td.classList.add('text-right'); // 숫자는 우측 정렬
+                    }
+
+                    td.innerText = val;
+                    tr.appendChild(td);
+                }
+                bodyContainer.appendChild(tr);
+            }
+        }
+
+        // 에러 UI 표시
+        function showError(msg) {
+            document.getElementById('loading-container').classList.add('hidden');
+            document.getElementById('dashboard-container').classList.add('hidden');
+            const errorContainer = document.getElementById('error-container');
+            errorContainer.classList.remove('hidden');
+            document.getElementById('error-message').innerText = msg;
+            
+            const badge = document.getElementById('status-badge');
+            badge.className = "px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium";
+            badge.innerText = "데이터 로드 실패";
+        }
 
     </script>
 </body>
 </html>
-
